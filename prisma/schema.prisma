@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id                   Int    @id @default(autoincrement())
+    email                String @unique
+    firstName            String
+    lastName             String
+    organizedContests    Contest[]
+    results              Result[]
+
+    @@unique([firstName, lastName])
+}
+
+model Contest {
+    id            Int      @id @default(autoincrement())
+    name          String   @unique
+    date          DateTime
+    vkUrl         String?
+    location      String?
+    organizedById Int?
+    organizedBy   User?    @relation(fields: [organizedById], references: [id])
+    rounds        Round[]
+}
+
+model Round {
+    id        Int @id @default(autoincrement())
+    name      String
+    contestId Int
+    contest   Contest @relation(fields: [contestId], references: [id])
+    results   Result[]
+}
+
+model Result {
+    id            Int    @id @default(autoincrement())
+    record        String
+    attempt       Int
+    roundId       Int
+    round         Round  @relation(fields: [roundId], references: [id])
+    performedById Int
+    performedBy   User   @relation(fields: [performedById], references: [id])
+}
