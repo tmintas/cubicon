@@ -18,7 +18,7 @@ export const postUser = async (req: any, res: any) => {
             data: userData
         });
 
-        res.status(204).json(createdUser);
+        res.status(201).json(createdUser);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });

@@ -2,9 +2,14 @@ import { prisma } from "..";
 
 export const getAllContests = async (req: any, res: any) => {
     try {
-        const postMessages = await prisma.contest.findMany();
+        const contests = await prisma.contest.findMany({
+            include: {
+                organizedBy: true
+            }
+        });
 
-        res.status(200).json(postMessages);
+        console.log(contests);
+        res.status(200).json(contests);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });
@@ -13,13 +18,17 @@ export const getAllContests = async (req: any, res: any) => {
 
 export const createContest = async (req: any, res: any) => {
     try {
-        const contestData = req.body;
-
         var createdContest = await prisma.contest.create({
-            data: contestData
+            data: {
+                name: req.body.name,
+                vkUrl: req.body.vkUrl,
+                location: null,
+                date: req.body.date,
+                organizedBy: { connect: { id: req.body.organizedById } },
+            }
         });
 
-        res.status(204).json(createdContest);
+        res.status(201).json(createdContest);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });
