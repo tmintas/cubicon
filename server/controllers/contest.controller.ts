@@ -22,9 +22,14 @@ export const createContest = async (req: any, res: any) => {
             data: {
                 name: req.body.name,
                 vkUrl: req.body.vkUrl,
-                location: null,
+                city: req.body.city,
                 date: req.body.date,
                 organizedBy: { connect: { id: req.body.organizedById } },
+                rounds: { create: req.body.rounds },
+            },
+            include: {
+                rounds: true,
+                organizedBy: true,
             }
         });
 

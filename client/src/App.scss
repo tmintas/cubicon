@@ -65,12 +65,12 @@ html, body, #root {
 
         .city-container {
             display: flex;
-            width: 70%;
+            width: 80%;
             vertical-align: top;
-            margin-top: 16px;
+            margin-top: 25px;
 
             #city-label {
-                flex-basis: 40%;
+                flex-basis: 50%;
             }
 
             #city-input {
@@ -86,12 +86,20 @@ html, body, #root {
 
         input {
             width: 100%;
-            padding: 0 10px;
+            padding: 0 10px 3px;
             background-color: #1C1F3C;
             border: none;
             border-bottom: 1px solid #505153;
             outline: none;
             color: #FFFFFF;
+
+            &:disabled {
+                color: #505153;
+            }
+
+            &:focus {
+                border-bottom: 1px solid white;
+            }
         }
 
         .MuiFormControl-root input {
@@ -133,7 +141,7 @@ html, body, #root {
             .events-list {
                 flex-grow: 1;
                 display: flex;
-                justify-content: space-evenly;
+                justify-content: baseline;
                 flex-wrap: wrap;
 
                 .event {
@@ -153,6 +161,30 @@ html, body, #root {
             }
         }
 
+        .rounds-header {
+            margin-bottom: 15px;
+
+            > * {
+                display: inline-block;
+            }
+
+            button.add-round-btn {
+                margin-left: 15px;
+            }
+        }
+
+        button.remove-round-btn, button.add-round-btn {
+            border: none;
+            background-color: #BCB7B7;
+            color: black;
+            border-radius: 8px;
+            width: 25px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         table.rounds-table {
             margin-bottom: 40px;
             border-collapse: collapse;
@@ -168,7 +200,11 @@ html, body, #root {
 
             tr.header-row {
                 td:nth-child(1) {
-                    width: 11%;
+                    width: 100px;
+                }
+
+                td:nth-child(2) {
+                    width: auto;
                 }
             }
 
@@ -194,18 +230,6 @@ html, body, #root {
 
                 &.empty {
                     width: 20%;
-                }
-
-                button.remove-round-btn, button.add-round-btn {
-                    border: none;
-                    background-color: #BCB7B7;
-                    color: black;
-                    border-radius: 8px;
-                    width: 25px;
-                    height: 22px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
                 }
             }
         }

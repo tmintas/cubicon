@@ -6,7 +6,6 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
 
 type ContestFormState = {
-    organizer: string,
     name: string,
     city: string,
     date: Date,
@@ -14,35 +13,45 @@ type ContestFormState = {
     location: string,
     organizedById: any,
     organizedBy: any,
-    rounds: any[],
+    rounds: Round[],
+}
+
+type Round = {
+    name: string,
+    type: RoundType,
+}
+
+enum RoundType {
+    AVERAGE_OF_5 = 'AVERAGE_OF_5',
+    MEAN_OF_3 = 'MEAN_OF_3',
 }
 
 // TODO 
-// добавить город в модель
-// сделать автокомплит для организатора
-// разобраться с локалями дат
-// раунды
-// типы раундов
+// make organizator autocomplete input
+// date locales
+// form validation
+// add other events, 4x4, 5x5 etc
 
 const App = () => {
     const [ formState, setFormState ] = useState<ContestFormState>({
-        organizer: '',
         name: '',
-        city: '',
+        city: 'Казань',
         date: new Date(),
         vkLink: '',
         location: '',
-        organizedById: null,
+        organizedById: 3,
         organizedBy: null,
         rounds: []
     });
-
+    
     const handleSubmit = () => {
         const test =     {
             "name": formState.name,
             "vkUrl": formState.vkLink,
             "date": formState.date,
-            "organizedById": 3
+            "city": formState.city,
+            "rounds": formState.rounds,
+            "organizedById": formState.organizedById,
         };
 
         fetch("http://localhost:3000/contests", {
@@ -66,6 +75,94 @@ const App = () => {
         },
     });
 
+    const availableRounds: Round[] = [
+        { name: '3x3 финал', type: RoundType.AVERAGE_OF_5 },
+        { name: '3x3 полуфинал', type: RoundType.AVERAGE_OF_5  },
+        { name: '3x3 первый раунд', type: RoundType.AVERAGE_OF_5  },
+    ];
+
+    const addNewRound = () => {
+        const addedRounds = formState.rounds;
+        const newRounds = [...availableRounds].splice(0, addedRounds.length + 1);
+
+        setFormState({
+            ...formState,
+            rounds: newRounds.reverse(),
+        })
+    }
+
+    const removeRound = () => {
+        const currentRoundsNumber = formState.rounds.length;
+        let newRounds: Round[] = [];
+
+        if (currentRoundsNumber > 1) {
+            newRounds = [...availableRounds].splice(0, currentRoundsNumber - 1);
+        }
+
+        setFormState({
+            ...formState,
+            rounds: newRounds.reverse(),
+        });
+    }
+
+    console.log(formState.rounds);
+    
+    const roundItems = formState.rounds?.map(r => {
+        return (
+            <tr key={r.name} className="round-row">
+                <td> </td>
+                <td>
+                    {r.name}
+                </td>
+                <td>
+                    <div>
+                        <input 
+                            id="r1" 
+                            type="radio" 
+                            name={r.name} 
+                            checked={r.type === RoundType.AVERAGE_OF_5} 
+                            onChange={() => setRoundType(r, RoundType.AVERAGE_OF_5)}
+                        />
+                        <label htmlFor="r1"> среднее из 5</label>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <input
+                            type="radio" 
+                            name={r.name}
+                            id="r1" 
+                            value="1" 
+                            checked={r.type === RoundType.MEAN_OF_3} 
+                            onChange={() => setRoundType(r, RoundType.MEAN_OF_3)}
+                        />
+                        <label htmlFor="r1"> среднее из 3</label>
+                    </div>
+                </td>
+                <td className="empty"></td>
+            </tr>
+        )
+    });
+
+    const setRoundType = (round: Round, roundType: RoundType) => {
+        console.log('set ');
+        
+        round.type = roundType;
+
+        setFormState(v => {
+            return {
+                ...v,
+                rounds: v.rounds.map(r => {
+                    if (r.name === round.name) {
+                        r.type = roundType;
+                    }
+
+                    return r;
+                })
+            };
+        });
+    }
+
     return (
         <>
             <div className="nav-menu">side</div>
@@ -86,8 +183,9 @@ const App = () => {
                                         <input 
                                             id="organizer-input" 
                                             type="text"
-                                            value={formState.organizer} 
-                                            onChange={(e) => setFormState({ ...formState, organizer: e.target.value })}
+                                            disabled
+                                            value={'Тимур Фролов'} 
+                                            // onChange={(e) => setFormState({ ...formState, organizer: e.target.value })}
                                         />
                                     </td>
                                 </tr>
@@ -132,7 +230,7 @@ const App = () => {
                                     <DatePicker
                                         value={formState.date}
                                         onChange={(date: any) => {
-                                            setFormState({ ...formState, date: (date.toDate()       ) })
+                                            setFormState({ ...formState, date: (date.toDate()) })
                                         }}
                                         renderInput={(params) => <TextField {...params} />}
                                     />
@@ -144,7 +242,8 @@ const App = () => {
                                 <input 
                                     id="city-input" 
                                     type="text"
-                                    value={formState.city} 
+                                    value='Казань'
+                                    disabled
                                     onChange={(e) => setFormState({ ...formState, city: e.target.value })}
                                 />
                             </div>
@@ -161,7 +260,7 @@ const App = () => {
                                         раунды (2)
                                     </div>
                                 </div>
-                                <div className="event">
+                                {/* <div className="event">
                                     <div className="event-name">
                                         4x4
                                     </div>
@@ -176,71 +275,30 @@ const App = () => {
                                     <div className="event-rounds">
                                         раунды (2)
                                     </div>
-                                </div>
+                                </div> */}
+                            </div>
+                        </div>
+
+                        <div className="rounds-header">
+                            <div className="add-round-btn">
+                                Раунды 3х3
+                            </div>
+                            <div>
+                                <button className="add-round-btn" onClick={addNewRound}>
+                                    +
+                                </button>
+                            </div>
+                            <div>
+                                <button className="add-round-btn" onClick={removeRound}>
+                                    -
+                                </button>
                             </div>
                         </div>
 
                         <table className="rounds-table">
                             <tbody>
-                                <tr className="header-row">
-                                    <td>
-                                        Раунды 3х3
-                                    </td>
-                                    <td>
-                                        <button className="add-round-btn">
-                                            +
-                                        </button>
-                                    </td>
-                                </tr>
                                 <tr className="empty"></tr>
-
-                                <tr className="round-row">
-                                    <td>
-                                        <button className="remove-round-btn">
-                                            -
-                                        </button>
-                                    </td>
-                                    <td>
-                                        3x3 первый раунд
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <input type="radio" name="group1" id="r1" value="1" />
-                                            <label htmlFor="r1"> среднее из 5</label>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <input type="radio" name="group1" id="r1" value="1" />
-                                            <label htmlFor="r1"> среднее из 3</label>
-                                        </div>
-                                    </td>
-                                    <td className="empty"></td>
-                                </tr>
-                                <tr className="empty"></tr>
-                                <tr className="round-row">
-                                    <td>
-                                        <button className="remove-round-btn">
-                                            -
-                                        </button>
-                                    </td>
-                                    <td>
-                                        3х3 финал
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <input type="radio" name="group1" id="r1" value="1" />
-                                            <label htmlFor="r1"> среднее из 5</label>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <input type="radio" name="group1" id="r1" value="1" />
-                                            <label htmlFor="r1"> среднее из 3</label>
-                                        </div>
-                                    </td>
-                                    <td className="empty"></td>
-                                </tr>     
+                                {roundItems}
                             </tbody>
                         </table>
 

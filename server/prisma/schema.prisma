@@ -26,18 +26,24 @@ model Contest {
     name          String   @unique
     date          DateTime
     vkUrl         String?
-    location      String?
+    city          String?
     organizedById Int?
     organizedBy   User?    @relation(fields: [organizedById], references: [id])
     rounds        Round[]
 }
 
 model Round {
-    id        Int @id @default(autoincrement())
+    id        Int       @id @default(autoincrement())
     name      String
     contestId Int
-    contest   Contest @relation(fields: [contestId], references: [id])
+    contest   Contest   @relation(fields: [contestId], references: [id])
     results   Result[]
+    type      RoundType @default(AVERAGE_OF_5)
+}
+
+enum RoundType {
+    AVERAGE_OF_5
+    MEAN_OF_3
 }
 
 model Result {
