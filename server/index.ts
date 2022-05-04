@@ -15,7 +15,6 @@ export const prisma = new PrismaClient();
 export const router = express.Router();
 const PORT = process.env.PORT || 3000;
 
-
 const app: Express = express();
 
 app.use(helmet());

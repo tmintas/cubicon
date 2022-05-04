@@ -1,0 +1,113 @@
+h2 {
+    margin: 0 20px 25px;
+}
+
+.tabs {
+    display: flex;
+    align-items: center;
+    padding-bottom: 5px;
+
+    h2 {
+        height: 35px;
+        cursor: pointer;
+
+        &.active {
+            border-bottom: 1px solid white;
+        }
+    }
+}
+
+.list-container {
+    overflow-y: auto;
+}
+
+.actions-container {
+    flex: 100px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    button {
+        background-color: #00ADB5;
+        border-radius: 8px;
+        border: none;
+        padding: 10px 25px;
+        color: #FFFFFF;
+
+        &:hover {
+            background-color: lighten(#00ADB5, 10);
+            cursor: pointer;
+        }
+    }
+}
+
+.list-item {
+    display: flex;
+    
+    &:not(:last-child) {
+        margin-bottom: 15px;
+    }
+
+    .contest-preview {
+        background-color: #1C1F3C;
+        height: auto;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        padding-left: 40px;
+        font-size: 14px;
+        flex-grow: 1;
+
+        .main-info, .additional-info  {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+    
+            > * {
+                flex-basis: 20%;
+            }
+        }
+    
+        hr {
+            margin: 0;
+            border-top: 0px;
+            border-bottom: 1px solid #505153;
+        }
+    
+        .event-container {
+            background-color: #BCB7B7;
+            border-radius: 8px;
+            flex-basis: auto;
+            color: black;
+            font-weight: 500;
+            padding: 2px 15px;
+        }
+    }
+
+    .actions-menu {
+        flex-basis: 60px;
+        background-color: #1C1F3C;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+
+        .edit-icon, .delete-icon {
+            color: white;
+            height: 22px;
+            width: 22px;
+            border-radius: 8px;
+            padding: 3px;
+
+            &:hover {
+                background-color: darken(#1C1F3C, 6%);
+                cursor: pointer;
+            }
+        }
+    }
+}
+

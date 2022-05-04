@@ -1,0 +1,243 @@
+.info-container {
+    background-color: #1C1F3C;
+    padding: 25px 0;
+    height: auto;
+    text-align: center;
+    border-radius: 10px;
+    font-size: 30px;
+}
+
+.create-contest-form {
+    font-size: 15px;
+    margin-top: 25px;
+    padding: 25px;
+    background-color: #1C1F3C;
+    height: auto;
+    border-radius: 10px;
+
+    .calendar-container {
+        display: inline-block;
+        vertical-align: top;
+        width: 50%;
+
+        // customize calendar styles
+        .MuiOutlinedInput-input {
+            border: none;
+            border-radius: 8px;
+        }
+
+        .MuiOutlinedInput-root {
+            border-radius: 8px;
+        }
+
+        label.date-label {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+    }
+
+    .city-container {
+        display: flex;
+        width: 80%;
+        vertical-align: top;
+        margin-top: 25px;
+
+        #city-label {
+            flex-basis: 50%;
+        }
+
+        #city-input {
+            flex-grow: 1;
+        }
+    }
+
+    label {
+        display: inline-block;
+        width: 100%;
+        text-align: left;
+    }
+
+    input {
+        width: 100%;
+        padding: 0 10px 3px;
+        background-color: #1C1F3C;
+        border: none;
+        border-bottom: 1px solid #505153;
+        outline: none;
+        color: #bcb7b7;
+
+        &:disabled {
+            color: #505153;
+        }
+
+        &:hover:not(:disabled), &:focus:not(:disabled) {
+            border-bottom-color: lighten(#bcb7b7, 10);
+        }
+    }
+
+    .MuiFormControl-root input {
+        padding: 15px;
+    }
+
+    table {
+        width: 100%;
+        border: none;
+        border-spacing: 0;
+    }
+
+    table.main-info-table { 
+        width: 50%;
+        display: inline-block;
+
+        tr.empty {
+            height: 30px;
+        }
+
+        td:nth-child(1), td:nth-child(3) {
+            width: 30%;
+        }
+
+        td:nth-child(2), td:nth-child(4) {
+            width: 45%;
+            padding-right: 60px;
+        }
+    }
+
+    .events-container {
+        display: flex;
+        margin: 20px 0 40px;
+
+        .events-label {
+            flex-basis: 20%;
+        }
+
+        .events-list {
+            flex-grow: 1;
+            display: flex;
+            justify-content: baseline;
+            flex-wrap: wrap;
+
+            .event {
+                flex-basis: 30%;
+                color: white;
+
+                > * {
+                    display: inline-block;
+                    background-color: #00ADB5;
+                    border-radius: 8px;
+                    padding: 3px 15px;
+                }
+
+                .event-name {
+                    margin-right: 10px;
+                }
+            }
+        }
+    }
+
+    .rounds-header {
+        margin-bottom: 15px;
+
+        > * {
+            display: inline-block;
+        }
+
+        button.round-btn {
+            margin-left: 15px;
+        }
+    }
+
+    button.round-btn, button.round-btn {
+        border: none;
+        background-color: #BCB7B7;
+        color: black;
+        border-radius: 8px;
+        width: 25px;
+        height: 22px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &:disabled {
+            background-color: #363953;
+        }
+
+        &:hover:not(:disabled) {
+            background-color: lighten($color: #BCB7B7, $amount: 20);
+            cursor: pointer;
+        }
+    }
+
+    table.rounds-table {
+        margin-bottom: 40px;
+        border-collapse: collapse;
+
+        tr.empty {
+            height: 10px;
+        }
+
+        input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        tr.header-row {
+            td:nth-child(1) {
+                width: 100px;
+            }
+
+            td:nth-child(2) {
+                width: auto;
+            }
+        }
+
+        tr.round-row {
+            padding-bottom: 10px;
+            border-bottom: 1px solid #505153;
+            height: 40px;
+
+            td:nth-child(1) {
+                width: 5%;
+                padding: 5px 25px;
+            }
+        }
+
+        tr td {
+            > * {
+                display: flex;
+            }
+
+            &:nth-child(2), &:nth-child(3), &:nth-child(4) {
+                width: 16%;
+            }
+
+            &.empty {
+                width: 20%;
+            }
+        }
+    }
+
+    .actions-container {
+        display: flex;
+        justify-content: space-between;
+        // background-color: #2e335f;
+        // background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23020307' fill-opacity='0.44'%3E%3Cpath fill-rule='evenodd' d='M0 0h40v40H0V0zm40 40h40v40H40V40zm0-40h2l-2 2V0zm0 4l4-4h2l-6 6V4zm0 4l8-8h2L40 10V8zm0 4L52 0h2L40 14v-2zm0 4L56 0h2L40 18v-2zm0 4L60 0h2L40 22v-2zm0 4L64 0h2L40 26v-2zm0 4L68 0h2L40 30v-2zm0 4L72 0h2L40 34v-2zm0 4L76 0h2L40 38v-2zm0 4L80 0v2L42 40h-2zm4 0L80 4v2L46 40h-2zm4 0L80 8v2L50 40h-2zm4 0l28-28v2L54 40h-2zm4 0l24-24v2L58 40h-2zm4 0l20-20v2L62 40h-2zm4 0l16-16v2L66 40h-2zm4 0l12-12v2L70 40h-2zm4 0l8-8v2l-6 6h-2zm4 0l4-4v2l-2 2h-2z'/%3E%3C/g%3E%3C/svg%3E");
+
+        // TODO create component
+        button {
+            background-color: #00ADB5;
+            border-radius: 8px;
+            border: none;
+            padding: 10px 25px;
+            color: white;
+            box-sizing: border-box;
+            border: 1px solid #00ADB5;
+
+            &:hover {
+                background-color: lighten(#00ADB5, 10);
+                cursor: pointer;
+            }
+        }
+    }
+}
