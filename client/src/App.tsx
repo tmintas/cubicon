@@ -15,7 +15,6 @@ const App = () => {
         <BrowserRouter>
             <nav className="nav-menu">
                 <NavLink to="/contests" className={({ isActive }) =>(isActive ? " active" : "")}>КОНТЕСТЫ</NavLink>
-                <NavLink to="/edit-contest/0" className={({ isActive }) =>(isActive ? " active" : "")}>ДОБАВИТЬ</NavLink>
             </nav>
             <div className="main-container">
                 <div className="wrapper">

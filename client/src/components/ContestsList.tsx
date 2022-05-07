@@ -127,8 +127,14 @@ const ContestList = () => {
                                 </div>
                             </div>
                             <div className="actions-menu">
-                                <EditIcon className="edit-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
-                                <DeleteForeverIcon className="delete-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
+                                {
+                                    state.showUpcoming &&
+                                    <>
+                                        <EditIcon className="edit-icon" onClick={() => { onEditClick(c.id); }} display="none"></EditIcon>
+                                        <DeleteForeverIcon className="delete-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
+                                    </>
+                                }
+                                
                             </div>
                         </div>
                     )

@@ -1,3 +1,4 @@
+import moment from "moment";
 import { useEffect, useState } from "react";
 import "./EditContestForm.scss";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -17,7 +18,7 @@ type ContestFormState = {
     rounds: Round[],
 }
 
-// TODO 
+// TODO
 // make organizator as an autocomplete input
 // test date locales
 // add form validation
@@ -76,16 +77,16 @@ const EditContestForm = () => {
         };
 
         let response;
-        
+
         if (idNumber === 0) {
-            response = await fetch(`http://localhost:3000/contests/`, 
+            response = await fetch(`http://localhost:3000/contests/`,
             {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
             });
         } else {
-            response = await fetch(`http://localhost:3000/contests/${id}`, 
+            response = await fetch(`http://localhost:3000/contests/${id}`,
             {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
@@ -138,7 +139,7 @@ const EditContestForm = () => {
             };
         });
     }
-       
+
     const roundItems = formState.rounds?.map(r => {
         return (
             <tr key={r.name} className="round-row">
@@ -148,11 +149,11 @@ const EditContestForm = () => {
                 </td>
                 <td>
                     <div>
-                        <input 
-                            id="r1" 
-                            type="radio" 
-                            name={r.name} 
-                            checked={r.type === RoundType.AVERAGE_OF_5} 
+                        <input
+                            id="r1"
+                            type="radio"
+                            name={r.name}
+                            checked={r.type === RoundType.AVERAGE_OF_5}
                             onChange={() => setRoundType(r, RoundType.AVERAGE_OF_5)}
                         />
                         <label htmlFor="r1"> среднее из 5</label>
@@ -161,11 +162,11 @@ const EditContestForm = () => {
                 <td>
                     <div>
                         <input
-                            type="radio" 
+                            type="radio"
                             name={r.name}
-                            id="r1" 
-                            value="1" 
-                            checked={r.type === RoundType.MEAN_OF_3} 
+                            id="r1"
+                            value="1"
+                            checked={r.type === RoundType.MEAN_OF_3}
                             onChange={() => setRoundType(r, RoundType.MEAN_OF_3)}
                         />
                         <label htmlFor="r1"> среднее из 3</label>
@@ -190,11 +191,11 @@ const EditContestForm = () => {
                                 <label id="organizer-label" htmlFor="organizer-input">Организатор</label>
                             </td>
                             <td>
-                                <input 
-                                    id="organizer-input" 
+                                <input
+                                    id="organizer-input"
                                     type="text"
                                     disabled
-                                    value={'Тимур Фролов'} 
+                                    value={'Тимур Фролов'}
                                     // onChange={(e) => setFormState({ ...formState, organizer: e.target.value })}
                                 />
                             </td>
@@ -205,10 +206,10 @@ const EditContestForm = () => {
                                 <label id="name-label" htmlFor="name-input">Название</label>
                             </td>
                             <td>
-                                <input 
-                                    id="city-input" 
+                                <input
+                                    id="city-input"
                                     type="text"
-                                    value={formState.name} 
+                                    value={formState.name}
                                     onChange={(e) => setFormState({ ...formState, name: e.target.value })}
                                 />
                             </td>
@@ -219,10 +220,10 @@ const EditContestForm = () => {
                                 <label id="vk-label" htmlFor="vk-input">Ссылка VK</label>
                             </td>
                             <td>
-                                <input 
-                                    id="vk-input" 
+                                <input
+                                    id="vk-input"
                                     type="text"
-                                    value={formState.vkLink} 
+                                    value={formState.vkLink}
                                     onChange={(e) => setFormState({ ...formState, vkLink: e.target.value })}
                                 />
                             </td>
@@ -234,10 +235,26 @@ const EditContestForm = () => {
                 <div className="calendar-container">
                     <label className="date-label">Дата проведения</label>
                     <ThemeProvider theme={darkTheme}>
-                        <LocalizationProvider 
+                        <LocalizationProvider
                             dateAdapter={AdapterMoment}
                         >
                             <DatePicker
+                            shouldDisableDate={(date: moment.Moment) => {
+                                // disable previous days, but allow today
+                                const today = moment().toDate();
+                                today.setHours(0);
+                                today.setMinutes(0);
+                                today.setSeconds(0);
+                                today.setMilliseconds(0);
+
+                                const calendarDate = date.toDate();
+                                calendarDate.setHours(0);
+                                calendarDate.setMinutes(0);
+                                calendarDate.setSeconds(0);
+                                calendarDate.setMilliseconds(0);
+
+                                return calendarDate < today;
+                            }}
                                 value={formState.date}
                                 onChange={(date: any) => {
                                     setFormState({ ...formState, date: (date.toDate()) })
@@ -249,8 +266,8 @@ const EditContestForm = () => {
 
                     <div className="city-container">
                         <label id="city-label" htmlFor="city-input">Город</label>
-                        <input 
-                            id="city-input" 
+                        <input
+                            id="city-input"
                             type="text"
                             value='Казань'
                             disabled
