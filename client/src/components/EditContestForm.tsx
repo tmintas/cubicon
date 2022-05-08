@@ -5,8 +5,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { Round, RoundType } from "../models/state";
+import { RoundType } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
+
+type RoundItem = {
+    name: string,
+    type: RoundType,
+}
 
 type ContestFormState = {
     name: string,
@@ -15,7 +20,7 @@ type ContestFormState = {
     vkLink: string,
     organizedById: any,
     organizedBy: any,
-    rounds: Round[],
+    rounds: RoundItem[],
 }
 
 // TODO
@@ -29,7 +34,7 @@ const EditContestForm = () => {
     const { id } = useParams();
     const idNumber =  Number(id);
 
-    const availableRounds: Round[] = [
+    const availableRounds: RoundItem[] = [
         { name: '3x3 финал', type: RoundType.AVERAGE_OF_5 },
         { name: '3x3 полуфинал', type: RoundType.AVERAGE_OF_5  },
         { name: '3x3 первый раунд', type: RoundType.AVERAGE_OF_5  },
@@ -125,7 +130,7 @@ const EditContestForm = () => {
         });
     }
 
-    const setRoundType = (round: Round, roundType: RoundType) => {
+    const setRoundType = (round: RoundItem, roundType: RoundType) => {
         setFormState(v => {
             return {
                 ...v,

@@ -1,17 +1,15 @@
+@import '../styles/mixins.scss';
+@import '../styles/colors.scss';
+
 .info-container {
-    background-color: #1C1F3C;
-    padding: 25px 0;
-    height: auto;
-    text-align: center;
-    border-radius: 10px;
-    font-size: 30px;
+    @include info-container;
 }
 
 .create-contest-form {
     font-size: 15px;
     margin-top: 25px;
     padding: 25px;
-    background-color: #1C1F3C;
+    background-color: $secondary;
     height: auto;
     border-radius: 10px;
 
@@ -61,7 +59,7 @@
     input {
         width: 100%;
         padding: 0 10px 3px;
-        background-color: #1C1F3C;
+        background-color: $secondary;
         border: none;
         border-bottom: 1px solid #505153;
         outline: none;

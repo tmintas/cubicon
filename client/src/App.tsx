@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink } from "react-router-do
 import UserList from "./components/UserList";
 import EditContestForm from "./components/EditContestForm";
 import ContestsList from "./components/ContestsList";
+import EditResults from "./components/EditResults";
 
 // TODO 
 // make organizator autocomplete input
@@ -21,6 +22,7 @@ const App = () => {
                     <Routes>
                         <Route path="/contests" element={<ContestsList />}></Route>
                         <Route path="/edit-contest/:id" element={<EditContestForm />}></Route>
+                        <Route path="/edit-results/:id" element={<EditResults />}></Route>
                         <Route path="/users" element={<UserList />}></Route>
                         <Route path="/" element={<Navigate to="/contests" />}></Route>
                     </Routes>

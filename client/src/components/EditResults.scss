@@ -1,0 +1,128 @@
+@import '../styles/mixins.scss';
+@import '../styles/colors.scss';
+
+// override
+.main-container .wrapper {
+    width: 1100px;
+}
+
+.info-container {
+    @include info-container;
+}
+
+.round-tabs {
+    margin-top: 30px;
+    height: 50px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    color: white;
+    background-color: #1D2838;
+
+    .tab {
+        flex-grow: 1;
+        @include centered-content;
+
+        &.active {
+            border-top-right-radius: 8px;
+            border-top-left-radius: 8px;
+            background-color: $secondary;
+        }
+    }
+}
+
+.results-container {
+    padding: 20px 30px 40px;
+    background-color: $secondary;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+
+    table.results-table {
+        color: #EEEEEE;
+        font-size: 15px;
+        border-radius: 8px;
+        width: 100%;
+        border-collapse: collapse;
+
+        thead tr {
+            height: 45px;
+            border-bottom: .5px solid #7a7c80;
+        }
+
+        tr {
+            height: 38px;
+            align-items: center;
+
+            td.td-name {
+                text-align: center;
+                width: 20%;
+            }
+
+            td.td-res {
+                width: 5%;
+                padding: 0 15px;
+                text-align: center;
+            }
+
+            td:first-child, th:first-child {
+                width: 3%;
+            }
+
+            td:first-child {
+                text-align: center;
+            }
+
+            td.td-action {
+                text-align: center;
+                width: 3%;
+            }
+
+            &:nth-child(2n):not(.input-row) {
+                background-color: darken($secondary, 3);
+            }
+        }
+
+        tr.input-row {
+            height: 70px;
+
+            td {
+                text-align: center;
+            }
+
+            input {
+                width: 80%;
+                text-align: center;
+                background-color: $secondary;
+                border: none;
+                border-bottom: 1px solid #7a7c80;
+                outline: none;
+                color: #bcb7b7;
+        
+                &:hover:not(:disabled), &:focus:not(:disabled) {
+                    border-bottom-color: lighten(#bcb7b7, 10);
+                }
+            }
+        }
+
+        .icon {
+            color: #BCB7B7;
+            height: 22px;
+            width: 22px;
+            border-radius: 8px;
+            padding: 3px;
+
+            &:hover {
+                background-color: darken($secondary, 6%);
+                cursor: pointer;
+            }
+        }
+    }
+
+    .actions-container {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}

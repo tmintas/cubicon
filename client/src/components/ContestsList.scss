@@ -1,3 +1,5 @@
+@import '../styles/colors.scss';
+
 h2 {
     margin: 0 20px 25px;
 }
@@ -51,11 +53,8 @@ h2 {
     }
 
     .contest-preview {
-        background-color: #1C1F3C;
+        background-color: $secondary;
         height: auto;
-        border-top-left-radius: 10px;
-        border-bottom-left-radius: 10px;
-        padding-left: 55px;
         font-size: 14px;
         flex-grow: 1;
 
@@ -88,26 +87,36 @@ h2 {
 
     .actions-menu {
         flex-basis: 60px;
-        background-color: #1C1F3C;
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
+        background-color: $secondary;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: space-around;
 
         .edit-icon, .delete-icon {
-            color: white;
+            color: #BCB7B7;
             height: 22px;
             width: 22px;
             border-radius: 8px;
             padding: 3px;
 
             &:hover {
-                background-color: darken(#1C1F3C, 6%);
+                background-color: darken($secondary, 6%);
                 cursor: pointer;
             }
         }
+    }
+
+    .actions-menu-right {
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    .actions-menu-left {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        justify-content:flex-start;
+        padding-top: 7px;
     }
 }
 

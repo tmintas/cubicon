@@ -11,6 +11,7 @@ export type Contest = {
 }
 
 export type Round = {
+    id: number,
     name: string,
     type: RoundType,
 }

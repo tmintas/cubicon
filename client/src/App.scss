@@ -1,3 +1,5 @@
+@import './styles/colors.scss';
+
 html, body, #root {
     margin: 0;
     height: 100%;
@@ -12,7 +14,7 @@ html, body, #root {
 .nav-menu {
     width: auto;
     padding: 30px;
-    background-color: #02072E;
+    background-color: $dark-blue;
     display: flex;
     flex-direction: column;
     align-items: baseline;
@@ -38,7 +40,7 @@ html, body, #root {
 .main-container {
     flex-grow: 1;
     height: 100%;
-    background-color: #02072E;
+    background-color: #1D2838;
     display: flex;
     justify-content: center;
 

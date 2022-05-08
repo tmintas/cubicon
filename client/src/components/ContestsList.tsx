@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Contest } from "../models/state";
 import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
+import BallotIcon from '@mui/icons-material/Ballot';
 
 type ContestsListState = {
     isLoaded: boolean,
@@ -23,7 +24,7 @@ const ContestList = () => {
 
     const navigate = useNavigate();
 
-    const onEditClick = async (contestId: number) => {
+    const onEditClick = (contestId: number) => {
         navigate(`../edit-contest/${contestId}`);
     }
 
@@ -103,6 +104,10 @@ const ContestList = () => {
         });
     }
 
+    const onEditContestResultsClick: (contestId: number) => void = (contestId: number) => {
+        navigate(`../edit-results/${contestId}`);
+    }
+
     return (
         <>
             <div className="tabs">
@@ -114,6 +119,14 @@ const ContestList = () => {
                 {state.displayedContests.map(c => {
                     return (
                         <div className="list-item" key={c.id}>
+                            <div className="actions-menu actions-menu-left">
+                                {
+                                    state.showUpcoming &&
+                                    <>
+                                        <BallotIcon className="edit-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
+                                    </>
+                                }
+                            </div>
                             <div className="contest-preview" key={c.name}>
                                 <div className="main-info">
                                     <p>{c.name}</p>
@@ -126,15 +139,14 @@ const ContestList = () => {
                                     {getEventItems(c)}
                                 </div>
                             </div>
-                            <div className="actions-menu">
+                            <div className="actions-menu actions-menu-right">
                                 {
                                     state.showUpcoming &&
                                     <>
-                                        <EditIcon className="edit-icon" onClick={() => { onEditClick(c.id); }} display="none"></EditIcon>
+                                        <EditIcon className="edit-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
                                         <DeleteForeverIcon className="delete-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
                                     </>
                                 }
-                                
                             </div>
                         </div>
                     )
