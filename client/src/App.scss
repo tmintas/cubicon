@@ -43,9 +43,10 @@ html, body, #root {
     background-color: #1D2838;
     display: flex;
     justify-content: center;
+    overflow: auto;
 
     .wrapper {
-        width: 850px;
+        width: 1100px;
         display: flex;
         flex-direction: column;
         padding-top: 60px;
