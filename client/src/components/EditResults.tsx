@@ -6,31 +6,37 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useParams } from 'react-router-dom';
 import { Contest } from '../models/state';
 import './EditResults.scss';
-import Button from './shared/FormButton';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
 
 type Result = {
     id: number | null,
-
-    // TODO make id instead of string
-    performedBy: string | null,
     attempt1: string | null,
     attempt2: string | null,
     attempt3: string | null,
     attempt4: string | null,
     attempt5: string | null,
+
+    // indicates that the result is being edited
     isEditing: boolean,
+
+    // indicates that the result was added using UI and not sent to backend yet
+    isAdded: boolean,
+
+    // TODO make id instead of string
+    performedBy: string | null,
+
+    roundId: number,
 }
 
-type ResultsFormState = {
+type ResultsTableState = {
     loaded: boolean,
 
     // contest info loaded from backend
     contest: Contest | null,
 
-    selectedRoundId: number | null,
-    selectedRoundResults: Result[],
+    selectedRoundId: number,
+    contestResults: Result[],
     editingResult: Result,
 }
 
@@ -49,18 +55,21 @@ const EditResults = () => {
         attempt5: null,
         isValid: false,
         isEditing: false,
+        isAdded: false,
+        roundId: 0,
     };
 
-    const [ state, setState ] = useState<ResultsFormState>({
+    const [ state, setState ] = useState<ResultsTableState>({
         loaded: false,
         contest: null,
-        selectedRoundId: null,
-        selectedRoundResults: [],
+        selectedRoundId: 0,
+        contestResults: [],
         editingResult: defaultEditingResult,
     });
 
-    const contestIdNumber =  Number(contestId);
+    const contestIdNumber = Number(contestId);
     const editingResult = state.editingResult;
+    const selectedRoundResults = state.contestResults.filter(r => r.roundId === state.selectedRoundId);
 
     useEffect(() => {
         if (contestIdNumber > 0) {
@@ -69,13 +78,14 @@ const EditResults = () => {
                 headers: {'Content-Type': 'application/json'},
             })
                 .then(r => r.json())
-                .then(res => {
+                .then((contest: Contest) => {
                     setState({
                         loaded: true,
-                        contest: res,
-                        selectedRoundId: res.rounds[0].id,
+                        contest,
+                        selectedRoundId: contest.rounds[0].id,
                         // TODO load results from backend
-                        selectedRoundResults: [{
+                        // TODO check other rounds from the contest
+                        contestResults: [{
                             id: 1,
                             performedBy: 'Тимур Фролов',
                             attempt1: '14.22',
@@ -84,6 +94,8 @@ const EditResults = () => {
                             attempt4: '15.66',
                             attempt5: '11.61',
                             isEditing: false,
+                            isAdded: false,
+                            roundId: 74,
                         }],
                         editingResult: defaultEditingResult,
                     });
@@ -91,7 +103,10 @@ const EditResults = () => {
         }
     }, []);
 
+    // event handlers
     const onRoundSelect = (roundId: number) => {
+        onClearResultClick();
+
         setState(state => {
             return {
                 ...state,
@@ -101,18 +116,16 @@ const EditResults = () => {
     }
 
     const onAddResultClick = () => {
+        const newResult = { ...state.editingResult, roundId: state.selectedRoundId, isAdded: true };
+        
         setState(state => {
-            const editingResult = {
-                ...state.editingResult,
-                id: state.selectedRoundResults.length,
-            };
-
             return {
                 ...state,
-                editingResult: defaultEditingResult,
-                selectedRoundResults: [...state.selectedRoundResults, editingResult]
+                contestResults: [...state.contestResults, newResult]
             }
         });
+
+        onClearResultClick();
     }
 
     const onClearResultClick = () => {
@@ -120,7 +133,7 @@ const EditResults = () => {
             return {
                 ...state,
                 editingResult: defaultEditingResult,
-                selectedRoundResults: [...state.selectedRoundResults].map(r => {
+                contestResults: [...state.contestResults].map(r => {
                     r.isEditing = false;
                     return r;
                 }),
@@ -128,24 +141,16 @@ const EditResults = () => {
         })
     }
 
-    const onSubmitEditResultClick = () => {
+    const onSubmitEditResultClick = () => {        
         setState(state => {
-            const editingResult = state.editingResult;
-
             return {
                 ...state,
                 editingResult: defaultEditingResult,
-                selectedRoundResults: [...state.selectedRoundResults.map(r => {
-                    if (!r.isEditing) {
-                        return r;
-                    } else {
-                        r = editingResult;
-                        r.isEditing = false;
-                        return r;
-                    }
-                })]
+                contestResults: [...state.contestResults.map(r => r.isEditing ? state.editingResult : r)]
             }
         })
+
+        onClearResultClick();
     }
 
     const onAttemptChange = (attemptNumber: number, event: any) => {
@@ -182,7 +187,7 @@ const EditResults = () => {
         setState((state) => {
             return {
                 ...state,
-                selectedRoundResults: state.selectedRoundResults.filter(r => r.performedBy !== result.performedBy),
+                contestResults: state.contestResults.filter(r => r !== result),
                 editingResult: defaultEditingResult,
             };
         });
@@ -193,8 +198,8 @@ const EditResults = () => {
             return {
                 ...state,
                 editingResult: result,
-                selectedRoundResults: [...state.selectedRoundResults].map(r => {
-                    if (r.performedBy === result.performedBy) {
+                contestResults: [...state.contestResults].map(r => {
+                    if (r.performedBy === result.performedBy && r.roundId === state.selectedRoundId) {
                         r.isEditing = true;
                         return r;
                     } else {
@@ -206,6 +211,7 @@ const EditResults = () => {
         });
     }
 
+    // UI variables
     // valid values: '9.43', '19.43', '1:19.03', '12:19.03', '59:19.03'
     const isAttemptInputValid = (rawValue: string | null) => {
         if (!rawValue) return false;
@@ -242,20 +248,24 @@ const EditResults = () => {
         state.editingResult.attempt4,
         state.editingResult.attempt5,
     ].every(i => isAttemptInputValid(i)) && !!state.editingResult.performedBy && 
-        state.selectedRoundResults.every(r => r.isEditing || r.performedBy !== state.editingResult.performedBy);
+        selectedRoundResults.every(r => r.performedBy !== state.editingResult.performedBy || r.isEditing);
 
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
         !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedBy;
 
+    // TSX elements
     const inputRowCells = !state.editingResult ? <div>empty</div> :
         <>
             <td>
                 <input
                     type="text"
+                    className="name-input"
                     value={state.editingResult.performedBy ?? ''}
                     onChange={(e) => { onNameChange(e); }}
                 />
             </td>
+            <td></td>
+            <td></td>
             <td>
                 <input
                     type="text"
@@ -293,7 +303,7 @@ const EditResults = () => {
             </td>
             <td>
                 {
-                    !!state.editingResult.id
+                    !!editingResult.id || editingResult.isAdded
                         ? <button className='inline-button' disabled={!isEditingResultValid} onClick={onSubmitEditResultClick}>
                             <CheckCircleIcon
                                 className={`icon ${!isEditingResultValid && 'disabled'}`}
@@ -351,20 +361,24 @@ const EditResults = () => {
                 <table className='results-table'>
                     <thead>
                         <tr>
-                            <th style={{width: '5%'}}>Место</th>
-                            <th style={{width: '35%'}}>Участник</th>
-                            <th style={{width: '50%'}} colSpan={5}>Сборки</th>
-                            <th ></th>
+                            <th style={{width: '45px'}}>Место</th>
+                            <th style={{width: '220px'}}>Участник</th>
+                            <th style={{width: '120px'}}>Лучшая</th>
+                            <th style={{width: '120px'}}>Среднее</th>
+                            <th colSpan={5}>Сборки</th>
+                            <th colSpan={2} style={{width: '100px'}}></th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {state.selectedRoundResults.map((r, i) => {
+                        {selectedRoundResults.map((r, i) => {
                             return (
                                 // TODO use id
                                 <tr key={i}>
-                                    <td className='td-order'>{i}</td>
+                                    <td className='td-order'>{i+1}</td>
                                     <td className='td-name'>{r.performedBy}</td>
+                                    <td className='td-res'>1:10.00</td>
+                                    <td className='td-res'>2:10.55</td>
                                     <td className='td-res'>{r.attempt1}</td>
                                     <td className='td-res'>{r.attempt2}</td>
                                     <td className='td-res'>{r.attempt3}</td>
@@ -395,7 +409,7 @@ const EditResults = () => {
 
                 <div className="actions-container">
                     <FormButton onClick={() => { }} text="Назад к списку"></FormButton>
-                    <FormButton onClick={() => { }} text="Записать результат"></FormButton>
+                    <FormButton onClick={() => { console.log(state.contestResults); }} text="Записать результат"></FormButton>
                 </div>
             </div>
         </>

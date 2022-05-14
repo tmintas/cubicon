@@ -12,14 +12,11 @@ html, body, #root {
 }
 
 .nav-menu {
-    width: auto;
-    padding: 30px;
+    padding: 125px 50px 30px 30px;
     background-color: $dark-blue;
     display: flex;
     flex-direction: column;
     align-items: baseline;
-    padding-top: 125px;
-    padding-right: 50px;
 
     > a {
         margin-bottom: 25px;
@@ -40,7 +37,7 @@ html, body, #root {
 .main-container {
     flex-grow: 1;
     height: 100%;
-    background-color: #1D2838;
+    background-color: $primary;
     display: flex;
     justify-content: center;
     overflow: auto;

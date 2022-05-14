@@ -13,7 +13,7 @@
     align-items: stretch;
     justify-content: flex-start;
     color: $light-gray;
-    background-color: #1D2838;
+    background-color: $primary;
 
     .tab {
         flex-grow: 1;
@@ -38,6 +38,7 @@
     }
 
     table.results-table {
+        width: 100%;
         color: $light-gray;
         font-size: 15px;
         border-radius: 8px;
@@ -59,6 +60,10 @@
 
             td.td-order, td.td-action, td.td-name {
                 text-align: center;
+            }
+
+            td.td-name {
+                padding-left: 10px;
             }
 
             &:nth-child(2n):not(.input-row) {
@@ -86,6 +91,10 @@
 
                 &:hover:not(:disabled), &:focus:not(:disabled) {
                     border-bottom-color: lighten(#bcb7b7, 10);
+                }
+
+                &.name-input {
+                    width: 95%;
                 }
             }
 
