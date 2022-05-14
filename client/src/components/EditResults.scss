@@ -1,10 +1,6 @@
 @import '../styles/mixins.scss';
 @import '../styles/colors.scss';
 
-.info-container {
-    @include info-container;
-}
-
 .round-tabs {
     margin-top: 30px;
     height: 50px;
@@ -17,12 +13,17 @@
 
     .tab {
         flex-grow: 1;
+        border-top-right-radius: 8px;
+        border-top-left-radius: 8px;
+        cursor: pointer;
         @include centered-content;
 
         &.active {
-            border-top-right-radius: 8px;
-            border-top-left-radius: 8px;
             background-color: $secondary;
+        }
+
+        &:hover:not(.active) {
+            background-color: lighten($primary, 3);
         }
     }
 }

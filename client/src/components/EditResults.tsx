@@ -4,18 +4,20 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useParams } from 'react-router-dom';
-import { Contest } from '../models/state';
+import { Contest, Result } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
 
-type Result = {
+type ResultUIItem = {
     id: number | null,
     attempt1: string | null,
     attempt2: string | null,
     attempt3: string | null,
     attempt4: string | null,
     attempt5: string | null,
+    best: string | null,
+    average: string | null,
 
     // indicates that the result is being edited
     isEditing: boolean,
@@ -36,8 +38,8 @@ type ResultsTableState = {
     contest: Contest | null,
 
     selectedRoundId: number,
-    contestResults: Result[],
-    editingResult: Result,
+    contestResults: ResultUIItem[],
+    editingResult: ResultUIItem,
 }
 
 // TODO use react-hook-form for form handling
@@ -53,6 +55,8 @@ const EditResults = () => {
         attempt3: null,
         attempt4: null,
         attempt5: null,
+        best: null,
+        average: null,
         isValid: false,
         isEditing: false,
         isAdded: false,
@@ -93,6 +97,8 @@ const EditResults = () => {
                             attempt3: '9.77',
                             attempt4: '15.66',
                             attempt5: '11.61',
+                            best: '15.55',
+                            average: '16.55',
                             isEditing: false,
                             isAdded: false,
                             roundId: 74,
@@ -103,6 +109,43 @@ const EditResults = () => {
         }
     }, []);
 
+    const toMilliseconds = (resultRaw: string | null) => {
+        if (!resultRaw) return 0;
+
+        const milliseconds: number = +resultRaw.split('.')[1];
+
+        const minutesAndSeconds = resultRaw.split('.')[0];
+        let seconds: number;
+        let minutes = 0;
+
+        if (minutesAndSeconds.indexOf(':') === -1) {
+            seconds = +minutesAndSeconds;
+        } else {
+            minutes = +minutesAndSeconds.split(':')[0];
+            seconds = +minutesAndSeconds.split(':')[1];
+        }
+
+        return minutes * 6000 + seconds * 100 + milliseconds;
+    }
+
+    const getBestAndAverage: (result: ResultUIItem) => [number, number] = (result: ResultUIItem) => {
+        const result1Ms = toMilliseconds(result.attempt1 as string);
+        const result2Ms = toMilliseconds(result.attempt2 as string);
+        const result3Ms = toMilliseconds(result.attempt3 as string);
+        const result4Ms = toMilliseconds(result.attempt4 as string);
+        const result5Ms = toMilliseconds(result.attempt5 as string);
+
+        const results = [ result1Ms, result2Ms, result3Ms, result4Ms, result5Ms ];
+        const worst = results.reduce((prev, cur) => cur > prev ? cur : prev, results[0]);
+        const best = results.reduce((prev, cur) => cur < prev ? cur : prev, results[0]);
+
+        const withoutBestAndWorst: number[] = results.filter((_, i) => i !== results.indexOf(worst) && i !== results.indexOf(best));
+
+        const avg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
+        
+        return [best, avg];
+    }
+    
     // event handlers
     const onRoundSelect = (roundId: number) => {
         onClearResultClick();
@@ -116,8 +159,8 @@ const EditResults = () => {
     }
 
     const onAddResultClick = () => {
-        const newResult = { ...state.editingResult, roundId: state.selectedRoundId, isAdded: true };
-        
+        let newResult = { ...state.editingResult, roundId: state.selectedRoundId, isAdded: true };
+
         setState(state => {
             return {
                 ...state,
@@ -141,7 +184,7 @@ const EditResults = () => {
         })
     }
 
-    const onSubmitEditResultClick = () => {        
+    const onResultSave = () => {        
         setState(state => {
             return {
                 ...state,
@@ -156,7 +199,6 @@ const EditResults = () => {
     const onAttemptChange = (attemptNumber: number, event: any) => {
         const attemptRawInput = event.target.value;
         const attemptKey = `attempt${attemptNumber}`;
-        console.log(state.editingResult);
         
         setState((state) => {
             return {
@@ -183,7 +225,7 @@ const EditResults = () => {
         });
     }
 
-    const onDeleteResultClick = (result: Result) => {
+    const onDeleteResultClick = (result: ResultUIItem) => {
         setState((state) => {
             return {
                 ...state,
@@ -193,7 +235,7 @@ const EditResults = () => {
         });
     }
 
-    const onEditResultClick = (result: Result) => {
+    const onEditResultClick = (result: ResultUIItem) => {
         setState((state) => {
             return {
                 ...state,
@@ -208,6 +250,23 @@ const EditResults = () => {
                     }
                 }),
             };
+        });
+    }
+
+    const onSubmitClick = () => {
+        const results = state.contestResults.map(r => {
+            let result = {
+                attempt1: toMilliseconds(r.attempt1),
+                attempt2: toMilliseconds(r.attempt2),
+                attempt3: toMilliseconds(r.attempt3),
+                attempt4: toMilliseconds(r.attempt4),
+                attempt5: toMilliseconds(r.attempt5),
+                best: getBestAndAverage(r)[0],
+                average: getBestAndAverage(r)[1],
+                performedByStr: r.performedBy
+            };
+
+            return result;
         });
     }
 
@@ -304,7 +363,7 @@ const EditResults = () => {
             <td>
                 {
                     !!editingResult.id || editingResult.isAdded
-                        ? <button className='inline-button' disabled={!isEditingResultValid} onClick={onSubmitEditResultClick}>
+                        ? <button className='inline-button' disabled={!isEditingResultValid} onClick={onResultSave}>
                             <CheckCircleIcon
                                 className={`icon ${!isEditingResultValid && 'disabled'}`}
                                 fontSize='small'
@@ -349,7 +408,8 @@ const EditResults = () => {
                             <div 
                                 key={r.id}
                                 className={`tab ${r.id === state.selectedRoundId && 'active'}`} 
-                                onClick={() => onRoundSelect(r.id)}>
+                                onClick={() => onRoundSelect(r.id)}
+                            >
                                 {r.name}
                             </div>
                         )
@@ -377,8 +437,8 @@ const EditResults = () => {
                                 <tr key={i}>
                                     <td className='td-order'>{i+1}</td>
                                     <td className='td-name'>{r.performedBy}</td>
-                                    <td className='td-res'>1:10.00</td>
-                                    <td className='td-res'>2:10.55</td>
+                                    <td className='td-res'>{r.best}</td>
+                                    <td className='td-res'>{r.average}</td>
                                     <td className='td-res'>{r.attempt1}</td>
                                     <td className='td-res'>{r.attempt2}</td>
                                     <td className='td-res'>{r.attempt3}</td>
@@ -409,7 +469,7 @@ const EditResults = () => {
 
                 <div className="actions-container">
                     <FormButton onClick={() => { }} text="Назад к списку"></FormButton>
-                    <FormButton onClick={() => { console.log(state.contestResults); }} text="Записать результат"></FormButton>
+                    <FormButton onClick={onSubmitClick} text="Записать результат"></FormButton>
                 </div>
             </div>
         </>

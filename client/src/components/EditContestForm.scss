@@ -1,10 +1,6 @@
 @import '../styles/mixins.scss';
 @import '../styles/colors.scss';
 
-.info-container {
-    @include info-container;
-}
-
 .create-contest-form {
     font-size: 15px;
     margin-top: 25px;

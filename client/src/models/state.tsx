@@ -16,6 +16,18 @@ export type Round = {
     type: RoundType,
 }
 
+export type Result = {
+    id: number,
+    attempt1: number,
+    attempt2: number,
+    attempt3: number,
+    attempt4: number,
+    attempt5: number,
+    best: number,
+    average: number,
+    performedByStr: string,
+}
+
 export enum RoundType {
     AVERAGE_OF_5 = 'AVERAGE_OF_5',
     MEAN_OF_3 = 'MEAN_OF_3',
