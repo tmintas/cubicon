@@ -48,10 +48,18 @@ enum RoundType {
 
 model Result {
     id            Int    @id @default(autoincrement())
-    record        String
-    attempt       Int
+    attempt1      Int
+    attempt2      Int
+    attempt3      Int
+    attempt4      Int
+    attempt5      Int
+    best          Int
+    average       Int
     roundId       Int
     round         Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
     performedById Int
     performedBy   User   @relation(fields: [performedById], references: [id])
+
+    // TODO remove this and use performedById
+    performedByStr String
 }

@@ -1,9 +1,9 @@
 import express from 'express';
-import { getAllResults, createResult, deleteResult, updateResult } from '../controllers/result.controller';
+import { getAllResults, createResults, deleteResult, updateResult } from '../controllers/result.controller';
 
 const router = express.Router();
 
-router.post('/', createResult);
+router.post('/', createResults);
 router.get('/', getAllResults);
 router.delete('/:id', deleteResult);
 router.patch('/:id', updateResult)

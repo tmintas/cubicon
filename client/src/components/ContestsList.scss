@@ -86,19 +86,18 @@ h2 {
     }
 
     .actions-menu {
-        flex-basis: 60px;
+        padding: 0 15px;
         background-color: $secondary;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: space-around;
 
-        .edit-icon, .delete-icon {
+        .action-icon {
             color: #BCB7B7;
             height: 22px;
             width: 22px;
             border-radius: 8px;
-            padding: 3px;
+            padding: 3px 5px;
 
             &:hover {
                 background-color: darken($secondary, 6%);
@@ -116,7 +115,6 @@ h2 {
         border-top-left-radius: 10px;
         border-bottom-left-radius: 10px;
         justify-content:flex-start;
-        padding-top: 7px;
     }
 }
 

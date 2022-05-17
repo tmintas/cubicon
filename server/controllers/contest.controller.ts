@@ -69,7 +69,11 @@ export const getContest = async (req: any, res: any) => {
                 id
             },
             include: {
-                rounds: true
+                rounds: {
+                    include: {
+                        results: true,
+                    }
+                },
             }
         });
 

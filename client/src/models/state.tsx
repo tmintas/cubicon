@@ -14,6 +14,7 @@ export type Round = {
     id: number,
     name: string,
     type: RoundType,
+    results: Result[],
 }
 
 export type Result = {
@@ -26,6 +27,7 @@ export type Result = {
     best: number,
     average: number,
     performedByStr: string,
+    roundId: number,
 }
 
 export enum RoundType {

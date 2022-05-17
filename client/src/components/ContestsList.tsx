@@ -120,12 +120,6 @@ const ContestList = () => {
                     return (
                         <div className="list-item" key={c.id}>
                             <div className="actions-menu actions-menu-left">
-                                {
-                                    state.showUpcoming &&
-                                    <>
-                                        <BallotIcon className="edit-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
-                                    </>
-                                }
                             </div>
                             <div className="contest-preview" key={c.name}>
                                 <div className="main-info">
@@ -143,8 +137,9 @@ const ContestList = () => {
                                 {
                                     state.showUpcoming &&
                                     <>
-                                        <EditIcon className="edit-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
-                                        <DeleteForeverIcon className="delete-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
+                                        <BallotIcon className="action-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
+                                        <EditIcon className="action-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
+                                        <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
                                     </>
                                 }
                             </div>

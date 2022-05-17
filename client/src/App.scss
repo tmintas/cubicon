@@ -40,10 +40,9 @@ html, body, #root {
     background-color: $primary;
     display: flex;
     justify-content: center;
-    overflow: auto;
 
     .wrapper {
-        width: 1200px;
+        width: 70vw;
         display: flex;
         flex-direction: column;
         padding: 60px 30px 0 30px;

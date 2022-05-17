@@ -3,11 +3,12 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useParams } from 'react-router-dom';
-import { Contest, Result } from '../models/state';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Contest } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
+import { rawListeners } from 'process';
 
 type ResultUIItem = {
     id: number | null,
@@ -26,7 +27,7 @@ type ResultUIItem = {
     isAdded: boolean,
 
     // TODO make id instead of string
-    performedBy: string | null,
+    performedByStr: string | null,
 
     roundId: number,
 }
@@ -46,10 +47,11 @@ type ResultsTableState = {
 // TODO add validation error messages
 // TODO add tooltips
 const EditResults = () => {
+    const navigate = useNavigate();
     const { id: contestId } = useParams();
     const defaultEditingResult = {
         id: null,
-        performedBy: null,
+        performedByStr: null,
         attempt1: null,
         attempt2: null,
         attempt3: null,
@@ -71,10 +73,6 @@ const EditResults = () => {
         editingResult: defaultEditingResult,
     });
 
-    const contestIdNumber = Number(contestId);
-    const editingResult = state.editingResult;
-    const selectedRoundResults = state.contestResults.filter(r => r.roundId === state.selectedRoundId);
-
     useEffect(() => {
         if (contestIdNumber > 0) {
             fetch(`http://localhost:3000/contests/${contestIdNumber}`, {
@@ -83,31 +81,53 @@ const EditResults = () => {
             })
                 .then(r => r.json())
                 .then((contest: Contest) => {
+                    const contestResults = contest.rounds.flatMap(round => round.results).map(r => {
+                        const resultUIItem = {
+                            id: r.id,
+                            attempt1: toDelimitedString(r.attempt1),
+                            attempt2: toDelimitedString(r.attempt2),
+                            attempt3: toDelimitedString(r.attempt3),
+                            attempt4: toDelimitedString(r.attempt4),
+                            attempt5: toDelimitedString(r.attempt5),
+                            best: toDelimitedString(r.best),
+                            average: toDelimitedString(r.average),
+                            performedByStr: r.performedByStr,
+                            roundId: r.roundId,
+                        } as ResultUIItem;
+
+                        return resultUIItem;
+                    });
+
                     setState({
                         loaded: true,
                         contest,
                         selectedRoundId: contest.rounds[0].id,
-                        // TODO load results from backend
-                        // TODO check other rounds from the contest
-                        contestResults: [{
-                            id: 1,
-                            performedBy: 'Тимур Фролов',
-                            attempt1: '14.22',
-                            attempt2: '15.22',
-                            attempt3: '9.77',
-                            attempt4: '15.66',
-                            attempt5: '11.61',
-                            best: '15.55',
-                            average: '16.55',
-                            isEditing: false,
-                            isAdded: false,
-                            roundId: 74,
-                        }],
+                        contestResults,
                         editingResult: defaultEditingResult,
                     });
                 });
         }
     }, []);
+
+    // useEffect(() => {
+    //     console.log('my effect');
+    //     console.log('items changed:');
+    //     console.log(state.contestResults);    
+    //     setState((state) => {
+    //         return {
+    //             ...state,
+    //             contestResults: state.contestResults.sort
+    //         };
+    //     })    
+    // }, state.contestResults.map(r => r.average));
+
+    const toDelimitedString = (resultMs: number) => {
+        const minutes = Math.floor(resultMs / 6000);
+        const seconds = Math.floor((resultMs - 6000 * minutes) / 100);
+        const milliseconds = resultMs - 6000 * minutes - seconds * 100;
+
+        return `${minutes > 0 ? minutes + ':' : ''}${seconds}.${milliseconds < 10 ? '0' + milliseconds : milliseconds}`;
+    }
 
     const toMilliseconds = (resultRaw: string | null) => {
         if (!resultRaw) return 0;
@@ -128,18 +148,14 @@ const EditResults = () => {
         return minutes * 6000 + seconds * 100 + milliseconds;
     }
 
+    // TODO add DNF, DNS
     const getBestAndAverage: (result: ResultUIItem) => [number, number] = (result: ResultUIItem) => {
-        const result1Ms = toMilliseconds(result.attempt1 as string);
-        const result2Ms = toMilliseconds(result.attempt2 as string);
-        const result3Ms = toMilliseconds(result.attempt3 as string);
-        const result4Ms = toMilliseconds(result.attempt4 as string);
-        const result5Ms = toMilliseconds(result.attempt5 as string);
+        const results = [ result.attempt1, result.attempt2, result.attempt3, result.attempt4, result.attempt5 ].map(r => toMilliseconds(r));
 
-        const results = [ result1Ms, result2Ms, result3Ms, result4Ms, result5Ms ];
-        const worst = results.reduce((prev, cur) => cur > prev ? cur : prev, results[0]);
         const best = results.reduce((prev, cur) => cur < prev ? cur : prev, results[0]);
-
-        const withoutBestAndWorst: number[] = results.filter((_, i) => i !== results.indexOf(worst) && i !== results.indexOf(best));
+        const withoutBest: number[] = results.filter((_, i) => i !== results.indexOf(best));
+        const worst = withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+        const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
 
         const avg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
         
@@ -159,7 +175,13 @@ const EditResults = () => {
     }
 
     const onAddResultClick = () => {
-        let newResult = { ...state.editingResult, roundId: state.selectedRoundId, isAdded: true };
+        let newResult: ResultUIItem = { 
+            ...editingResult, 
+            best: toDelimitedString(getBestAndAverage(editingResult)[0]),
+            average: toDelimitedString(getBestAndAverage(editingResult)[1]),
+            roundId: state.selectedRoundId, 
+            isAdded: true 
+        };
 
         setState(state => {
             return {
@@ -184,12 +206,24 @@ const EditResults = () => {
         })
     }
 
-    const onResultSave = () => {        
+    const onResultSaveClick = () => {        
         setState(state => {
             return {
                 ...state,
                 editingResult: defaultEditingResult,
-                contestResults: [...state.contestResults.map(r => r.isEditing ? state.editingResult : r)]
+                contestResults: [...state.contestResults.map(r => {
+                    if (r.isEditing) {
+                        const updatedItem: ResultUIItem = {
+                            ...editingResult,
+                            best: toDelimitedString(getBestAndAverage(editingResult)[0]),
+                            average: toDelimitedString(getBestAndAverage(editingResult)[1]),
+                        };
+
+                        return updatedItem;
+                    } else {
+                        return r;
+                    }
+                })]
             }
         })
 
@@ -204,7 +238,7 @@ const EditResults = () => {
             return {
                 ...state,
                 editingResult: {
-                    ...state.editingResult,
+                    ...editingResult,
                     [attemptKey]: attemptRawInput,
                 },
             };
@@ -212,14 +246,14 @@ const EditResults = () => {
     }
 
     const onNameChange = (event: any) => {
-        const performedBy = event.target.value as string;
+        const performedByStr = event.target.value as string;
 
         setState((state) => {
             return {
                 ...state,
                 editingResult: {
                     ...editingResult,
-                    performedBy,
+                    performedByStr,
                 },
             };
         });
@@ -241,7 +275,7 @@ const EditResults = () => {
                 ...state,
                 editingResult: result,
                 contestResults: [...state.contestResults].map(r => {
-                    if (r.performedBy === result.performedBy && r.roundId === state.selectedRoundId) {
+                    if (r.performedByStr === result.performedByStr && r.roundId === state.selectedRoundId) {
                         r.isEditing = true;
                         return r;
                     } else {
@@ -253,9 +287,11 @@ const EditResults = () => {
         });
     }
 
-    const onSubmitClick = () => {
+    const onSubmitClick = async () => {
         const results = state.contestResults.map(r => {
             let result = {
+                id: r.id,
+                roundId: r.roundId,
                 attempt1: toMilliseconds(r.attempt1),
                 attempt2: toMilliseconds(r.attempt2),
                 attempt3: toMilliseconds(r.attempt3),
@@ -263,11 +299,20 @@ const EditResults = () => {
                 attempt5: toMilliseconds(r.attempt5),
                 best: getBestAndAverage(r)[0],
                 average: getBestAndAverage(r)[1],
-                performedByStr: r.performedBy
+                performedByStr: r.performedByStr,
+                performedById: 3,
             };
 
             return result;
         });
+
+        const res = await fetch('http://localhost:3000/results', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(results),
+        });
+
+        navigate('../contests');
     }
 
     // UI variables
@@ -300,26 +345,32 @@ const EditResults = () => {
             );
     };
 
+    const contestIdNumber = Number(contestId);
+    const editingResult = state.editingResult;
+    const selectedRoundResults = state.contestResults
+        .filter(r => r.roundId === state.selectedRoundId)
+        .sort((a, b) => !!a.average && !!b.average && toMilliseconds(a.average) > toMilliseconds(b.average) ? 1 : -1);
+
     const isEditingResultValid = [
-        state.editingResult.attempt1, 
-        state.editingResult.attempt2,
-        state.editingResult.attempt3,
-        state.editingResult.attempt4,
-        state.editingResult.attempt5,
-    ].every(i => isAttemptInputValid(i)) && !!state.editingResult.performedBy && 
-        selectedRoundResults.every(r => r.performedBy !== state.editingResult.performedBy || r.isEditing);
+        editingResult.attempt1, 
+        editingResult.attempt2,
+        editingResult.attempt3,
+        editingResult.attempt4,
+        editingResult.attempt5,
+    ].every(i => isAttemptInputValid(i)) && !!editingResult.performedByStr && 
+        selectedRoundResults.every(r => r.performedByStr !== editingResult.performedByStr || r.isEditing);
 
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
-        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedBy;
+        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedByStr;
 
     // TSX elements
-    const inputRowCells = !state.editingResult ? <div>empty</div> :
+    const inputRowCells = !editingResult ? <div>empty</div> :
         <>
             <td>
                 <input
                     type="text"
                     className="name-input"
-                    value={state.editingResult.performedBy ?? ''}
+                    value={state.editingResult.performedByStr ?? ''}
                     onChange={(e) => { onNameChange(e); }}
                 />
             </td>
@@ -363,7 +414,7 @@ const EditResults = () => {
             <td>
                 {
                     !!editingResult.id || editingResult.isAdded
-                        ? <button className='inline-button' disabled={!isEditingResultValid} onClick={onResultSave}>
+                        ? <button className='inline-button' disabled={!isEditingResultValid} onClick={onResultSaveClick}>
                             <CheckCircleIcon
                                 className={`icon ${!isEditingResultValid && 'disabled'}`}
                                 fontSize='small'
@@ -425,7 +476,7 @@ const EditResults = () => {
                             <th style={{width: '220px'}}>Участник</th>
                             <th style={{width: '120px'}}>Лучшая</th>
                             <th style={{width: '120px'}}>Среднее</th>
-                            <th colSpan={5}>Сборки</th>
+                            <th colSpan={5} style={{width: '370px'}}>Сборки</th>
                             <th colSpan={2} style={{width: '100px'}}></th>
                         </tr>
                     </thead>
@@ -436,7 +487,7 @@ const EditResults = () => {
                                 // TODO use id
                                 <tr key={i}>
                                     <td className='td-order'>{i+1}</td>
-                                    <td className='td-name'>{r.performedBy}</td>
+                                    <td className='td-name'>{r.performedByStr}</td>
                                     <td className='td-res'>{r.best}</td>
                                     <td className='td-res'>{r.average}</td>
                                     <td className='td-res'>{r.attempt1}</td>
@@ -468,7 +519,7 @@ const EditResults = () => {
                 </table>
 
                 <div className="actions-container">
-                    <FormButton onClick={() => { }} text="Назад к списку"></FormButton>
+                    <FormButton onClick={() => { navigate('../contests')}} text="Назад к списку"></FormButton>
                     <FormButton onClick={onSubmitClick} text="Записать результат"></FormButton>
                 </div>
             </div>

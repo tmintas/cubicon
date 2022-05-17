@@ -4,6 +4,7 @@
 .round-tabs {
     margin-top: 30px;
     height: 50px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -29,6 +30,8 @@
 }
 
 .results-container {
+    overflow: auto;
+    margin-bottom: 60px;
     padding: 20px 30px 40px;
     background-color: $secondary;
     border-bottom-left-radius: 8px;
@@ -39,7 +42,7 @@
     }
 
     table.results-table {
-        width: 100%;
+        width: 1155px;
         color: $light-gray;
         font-size: 15px;
         border-radius: 8px;
@@ -129,6 +132,7 @@
     }
 
     .actions-container {
+        width: 1140px;
         margin-top: 25px;
         display: flex;
         flex-direction: row;
