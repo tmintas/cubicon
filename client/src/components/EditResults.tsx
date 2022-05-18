@@ -8,6 +8,8 @@ import { Contest } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
+import { DNF, DNS, DNF_DISPLAY_VALUE, DNS_DISPLAY_VALUE } from '../constants';
+import ErrorIcon from '@mui/icons-material/Error';
 
 type ResultUIItem = {
     id: number | null,
@@ -30,7 +32,7 @@ type ResultUIItem = {
     performedByStr: string | null,
 }
 
-type ResultsTableState = {
+type ResulstFormState = {
     loaded: boolean,
 
     // contest info loaded from backend
@@ -63,7 +65,7 @@ const EditResults = () => {
         roundId: 0,
     };
 
-    const [ state, setState ] = useState<ResultsTableState>({
+    const [ state, setState ] = useState<ResulstFormState>({
         loaded: false,
         contest: null,
         selectedRoundId: 0,
@@ -109,8 +111,8 @@ const EditResults = () => {
 
     // transfors the input attempt in milliseconds to a readable format 'MM:SS.ms'
     const toDelimitedString = (resultMs: number) => {
-        if (resultMs === -1) return 'DNF';
-        if (resultMs === -2) return 'DNS';
+        if (resultMs === DNF) return DNF_DISPLAY_VALUE;
+        if (resultMs === DNS) return DNS_DISPLAY_VALUE;
 
         const minutes = Math.floor(resultMs / 6000);
         const seconds = Math.floor((resultMs - 6000 * minutes) / 100);
@@ -123,8 +125,8 @@ const EditResults = () => {
     const toMilliseconds = (resultRaw: string | null) => {
         if (!resultRaw) return 0;
 
-        if (resultRaw === 'DNF') return -1;
-        if (resultRaw === 'DNS') return -2;
+        if (resultRaw === DNF_DISPLAY_VALUE) return DNF;
+        if (resultRaw === DNS_DISPLAY_VALUE) return DNS;
 
         const milliseconds: number = +resultRaw.split('.')[1];
 
@@ -142,21 +144,20 @@ const EditResults = () => {
         return minutes * 6000 + seconds * 100 + milliseconds;
     }
 
-    // TODO add -1, -2
     const getBestAndAverage: (result: ResultUIItem) => [number, number] = (result: ResultUIItem) => {
         const attempts = [ result.attempt1, result.attempt2, result.attempt3, result.attempt4, result.attempt5 ].map(r => toMilliseconds(r));
 
-        const best = attempts.every(a => a === -1 || a === -2) 
+        const best = attempts.every(a => a === DNF || a === DNS) 
             ? attempts[0]
-            : attempts.filter(a => a !== -1 && a !== -2).sort((a, b) => a - b)[0];
+            : attempts.filter(a => a !== DNF && a !== DNS).sort((a, b) => a - b)[0];
 
-        // if all attempts are -1/-2 or there are 2 -1's, don't calculate average
-        if (best < 0 || attempts.filter(a => a === -1 || a === -2).length > 1) 
-            return [best, -1];
+        // if all attempts are DNF/DNS or there are 2 DNF's, don't calculate average
+        if (best < 0 || attempts.filter(a => a === DNF || a === DNS).length > 1) 
+            return [best, DNF];
 
         const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(best));
 
-        const dnfOrDns =  withoutBest.find(a => a === -1 || a === -2);
+        const dnfOrDns =  withoutBest.find(a => a === DNF || a === DNS);
         let worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
 
         const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
@@ -310,8 +311,8 @@ const EditResults = () => {
             return result;
         });
 
-        const res = await fetch('http://localhost:3000/results', {
-            method: 'POST',
+        const res = await fetch(`http://localhost:3000/results/${state.contest?.id}`, {
+            method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(results),
         });
@@ -320,11 +321,11 @@ const EditResults = () => {
     }
 
     // UI variables
-    // valid values: '9.43', '19.43', '1:19.03', '12:19.03', '59:19.03', -1, -2
+    // valid values: '9.43', '19.43', '1:19.03', '12:19.03', '59:19.03', DNF, DNS
     const isAttemptInputValid = (rawValue: string | null) => {
         if (!rawValue) return false;
 
-        if (rawValue === 'DNF' || rawValue === 'DNS') return true;
+        if (rawValue === DNF_DISPLAY_VALUE || rawValue === DNS_DISPLAY_VALUE) return true;
 
         const containsOnlyAllowed = /^[\d:\.S]+$/.test(rawValue);
         const chars: string[] = rawValue.split('');
@@ -360,17 +361,17 @@ const EditResults = () => {
         const best1 = toMilliseconds(previous.best);
         const best2 = toMilliseconds(next.best);
 
-        // if both averages are -1/-2, sort by bests
+        // if both averages are DNF/DNS, sort by bests
         if (avg1 < 0 && avg2 < 0) {
-            // if both bests are -1/-2, sort by competitor names
+            // if both bests are DNF/DNS, sort by competitor names
             if (best1 < 0 && best2 < 0) {
-                return !!previous.performedByStr && !!next.performedByStr && previous.performedByStr > next.performedByStr ? 1 : -1;
+                return !!previous.performedByStr && !!next.performedByStr && previous.performedByStr > next.performedByStr ? 1 : DNF;
             }
 
-            return !!best1 && !!best2 && best1 > best2 ? 1 : -1;
+            return !!best1 && !!best2 && best1 > best2 ? 1 : DNF;
         }
 
-        return !!avg1 && !!avg2 && avg2 !== -1 && avg2 !== -2 && avg1 > avg2 ? 1 : -1;
+        return !!avg1 && !!avg2 && avg2 !== DNF && avg2 !== DNS && avg1 > avg2 ? 1 : -1;
     }
 
     const selectedRoundResults = state.contestResults
@@ -466,6 +467,28 @@ const EditResults = () => {
             </td>
         </>
 
+    const roundHasResults = (roundId: number) => {
+        return state.contestResults.some(r => r.roundId === roundId);
+    }
+
+    const roundTabs =
+        <div className='round-tabs'>
+            {
+                state.contest?.rounds.map(r => {
+                    return (
+                            <div 
+                                key={r.id}
+                                className={`tab ${r.id === state.selectedRoundId && 'active'}`} 
+                                onClick={() => onRoundSelect(r.id)}
+                            >
+                            {r.name}
+                            <ErrorIcon className='error-icon' style={{visibility: roundHasResults(r.id) ? 'hidden' : 'visible' }}></ErrorIcon>
+                        </div>
+                    )
+                })
+            }
+        </div>
+
     // TODO create fancy spinner
     if (!state.loaded) return <div>loading...</div>;
 
@@ -478,21 +501,7 @@ const EditResults = () => {
                 {state.contest.name} - результаты
             </div>
 
-            <div className='round-tabs'>
-                {
-                    state.contest.rounds.map(r => {
-                        return (
-                            <div 
-                                key={r.id}
-                                className={`tab ${r.id === state.selectedRoundId && 'active'}`} 
-                                onClick={() => onRoundSelect(r.id)}
-                            >
-                                {r.name}
-                            </div>
-                        )
-                    })
-                }
-            </div>
+            {roundTabs}
 
             <div className='results-container'>
                 <table className='results-table'>
@@ -545,8 +554,8 @@ const EditResults = () => {
                 </table>
 
                 <div className="actions-container">
-                    <FormButton onClick={() => { navigate('../contests')}} text="Назад к списку"></FormButton>
-                    <FormButton onClick={onSubmitClick} text="Записать результат"></FormButton>
+                    <FormButton onClick={() => { navigate('../contests')}} disabled={false} text="Назад к списку"></FormButton>
+                    <FormButton onClick={onSubmitClick} disabled={state.contest.rounds.some(r => !roundHasResults(r.id))} text="Сохранить результаты"></FormButton>
                 </div>
             </div>
         </>

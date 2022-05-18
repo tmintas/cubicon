@@ -1,6 +1,9 @@
 import { Result } from "@prisma/client";
 import { prisma } from "..";
 
+const DNF = -1;
+const DNS = -2;
+
 export const getAllResults = async (req: any, res: any) => {
     try {
         const postMessages = await prisma.result.findMany();
@@ -12,41 +15,65 @@ export const getAllResults = async (req: any, res: any) => {
     }   
 };
 
-export const createResults = async (req: any, res: any) => {
+export const updateResults = async (req: any, res: any) => {
+    const contestId = +req.params.id;
+
     try {
         const results: Result[] = req.body;
+        const contestRounds = await prisma.round.findMany({
+            where: {
+                contestId,
+            },
+        });
+        const roundIds = contestRounds.map(r => r.id);
 
+        // check if all rounds have results
+        if (!contestRounds.every(r => results.find(res => res.roundId === r.id))) {
+            res.status(400).json({ message: 'results for some of the contest rounds are not provided'});
+
+            return;
+        }
+
+        // check results validity
+        if (results.some(r => !r.performedByStr || !isAttemptValid(r.attempt1) || !isAttemptValid(r.attempt2) ||
+                              !isAttemptValid(r.attempt3) || !isAttemptValid(r.attempt4) || !isAttemptValid(r.attempt5))) {
+            res.status(400).json({ message: 'some of the results has an empty or negative value'});
+
+            return;
+        }
+
+        // validate best and average
         for (let r of results) {
             const attempts = [ r.attempt1, r.attempt2, r.attempt3, r.attempt4, r.attempt5 ];
 
-            const calculatedBest = attempts.every(a => a === -1 || a === -2) 
+            const calculatedBest = attempts.every(a => a === DNF || a === DNS) 
                 ? attempts[0]
-                : attempts.filter(a => a !== -1 && a !== -2).sort((a, b) => a - b)[0];
+                : attempts.filter(a => a !== DNF && a !== DNS).sort((a, b) => a - b)[0];
 
             if (calculatedBest !== r.best) {
-                res.status(400).json({ message: 'best is incorrect! '});
+                res.status(400).json({ message: 'best is incorrect'});
 
                 return;
             }
 
             const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(calculatedBest));
-            const dnfOrDns =  withoutBest.find(a => a === -1 || a === -2);
+            const dnfOrDns =  withoutBest.find(a => a === DNF || a === DNS);
             const worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
             const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
     
             const calculatedAvg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
 
             if (calculatedAvg !== r.average) {
-                res.status(400).json({ message: 'average is incorrect! '});
+                res.status(400).json({ message: 'average is incorrect'});
 
                 return;
             }
         }
-        
+
         await prisma.result.deleteMany({
             where: {
                 roundId: {
-                    in: results.map(r => r.roundId),
+                    in: roundIds,
                 }
             }
         })
@@ -114,3 +141,9 @@ export const updateResult = async (req: any, res: any) => {
         res.status(404).json({ message: error.message });
     }   
 };
+
+const isAttemptValid = (attemptValueMs: number) => {
+    if (attemptValueMs === DNF || attemptValueMs === DNS) return true;
+
+    return attemptValueMs > 0;
+}

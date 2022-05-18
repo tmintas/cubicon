@@ -5,6 +5,7 @@ import { Contest } from "../models/state";
 import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
 import BallotIcon from '@mui/icons-material/Ballot';
+import FormButton from './shared/FormButton';
 
 type ContestsListState = {
     isLoaded: boolean,
@@ -149,7 +150,7 @@ const ContestList = () => {
             </div>
 
             <div className="actions-container">
-                <button onClick={() => { navigate('/edit-contest/0'); }}>Создать контест</button>
+                <FormButton onClick={() => { navigate('/edit-contest/0')}} disabled={false} text="Создать контест"></FormButton>
             </div>
         </>
     )

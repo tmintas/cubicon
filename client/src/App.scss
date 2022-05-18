@@ -4,7 +4,7 @@ html, body, #root {
     margin: 0;
     height: 100%;
     font-family: 'Roboto', sans-serif;
-    color: #bcb7b7;
+    color: #eeeeee;
 }
 
 #root {
@@ -36,16 +36,17 @@ html, body, #root {
 
 .main-container {
     flex-grow: 1;
-    height: 100%;
     background-color: $primary;
     display: flex;
     justify-content: center;
+    overflow-y: auto;
 
     .wrapper {
         width: 70vw;
         display: flex;
         flex-direction: column;
-        padding: 60px 30px 0 30px;
+        padding: 60px 30px;
+        overflow-y: auto;
     }
 }
 

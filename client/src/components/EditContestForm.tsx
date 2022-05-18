@@ -7,6 +7,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
 import { RoundType } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
+import FormButton from "./shared/FormButton";
 
 type RoundItem = {
     name: string,
@@ -145,6 +146,10 @@ const EditContestForm = () => {
         });
     }
 
+    const isFormValid = () => {
+        return !!formState.city && !!formState.name;
+    }
+
     const roundItems = formState.rounds?.map(r => {
         return (
             <tr key={r.name} className="round-row">
@@ -168,9 +173,9 @@ const EditContestForm = () => {
                     <div>
                         <input
                             type="radio"
+                            disabled={true}
                             name={r.name}
                             id="r1"
-                            value="1"
                             checked={r.type === RoundType.MEAN_OF_3}
                             onChange={() => setRoundType(r, RoundType.MEAN_OF_3)}
                         />
@@ -193,7 +198,7 @@ const EditContestForm = () => {
                     <tbody>
                         <tr>
                             <td>
-                                <label id="organizer-label" htmlFor="organizer-input">Организатор</label>
+                                <label id="organizer-label" htmlFor="organizer-input">Организатор *</label>
                             </td>
                             <td>
                                 <input
@@ -208,7 +213,7 @@ const EditContestForm = () => {
                         <tr className="empty"></tr>
                         <tr>
                             <td>
-                                <label id="name-label" htmlFor="name-input">Название</label>
+                                <label id="name-label" htmlFor="name-input">Название *</label>
                             </td>
                             <td>
                                 <input
@@ -270,7 +275,7 @@ const EditContestForm = () => {
                     </ThemeProvider>
 
                     <div className="city-container">
-                        <label id="city-label" htmlFor="city-input">Город</label>
+                        <label id="city-label" htmlFor="city-input">Город *</label>
                         <input
                             id="city-input"
                             type="text"
@@ -319,15 +324,8 @@ const EditContestForm = () => {
                 </table>
 
                 <div className="actions-container">
-                    <button onClick={() => { navigate('../contests'); }}>
-                        Назад к списку
-                    </button>
-                    <div className="img-container"></div>
-                    <button onClick={async () => {
-                        await handleSubmit();
-                    }}>
-                        Сохранить
-                    </button>
+                    <FormButton onClick={() => { navigate('../contests'); }} disabled={false} text="Назад к списку"></FormButton>
+                    <FormButton onClick={async () => { await handleSubmit(); }} disabled={!isFormValid()} text="Сохранить"></FormButton>
                 </div>
             </div>
         </>

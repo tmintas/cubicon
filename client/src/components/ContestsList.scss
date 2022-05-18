@@ -30,19 +30,6 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-
-    button {
-        background-color: #00ADB5;
-        border-radius: 8px;
-        border: none;
-        padding: 10px 25px;
-        color: #FFFFFF;
-
-        &:hover {
-            background-color: lighten(#00ADB5, 10);
-            cursor: pointer;
-        }
-    }
 }
 
 .list-item {
