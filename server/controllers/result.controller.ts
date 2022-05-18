@@ -1,5 +1,4 @@
 import { Result } from "@prisma/client";
-import { ServerResponse } from "http";
 import { prisma } from "..";
 
 export const getAllResults = async (req: any, res: any) => {
@@ -18,15 +17,26 @@ export const createResults = async (req: any, res: any) => {
         const results: Result[] = req.body;
 
         for (let r of results) {
-            const results = [ r.attempt1, r.attempt2, r.attempt3, r.attempt4, r.attempt5 ];
-            const worst = results.reduce((prev, cur) => cur > prev ? cur : prev, results[0]);
-            const best = results.reduce((prev, cur) => cur < prev ? cur : prev, results[0]);
-    
-            const withoutBestAndWorst: number[] = results.filter((_, i) => i !== results.indexOf(worst) && i !== results.indexOf(best));
-    
-            const avg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
+            const attempts = [ r.attempt1, r.attempt2, r.attempt3, r.attempt4, r.attempt5 ];
 
-            if (avg !== r.average) {
+            const calculatedBest = attempts.every(a => a === -1 || a === -2) 
+                ? attempts[0]
+                : attempts.filter(a => a !== -1 && a !== -2).sort((a, b) => a - b)[0];
+
+            if (calculatedBest !== r.best) {
+                res.status(400).json({ message: 'best is incorrect! '});
+
+                return;
+            }
+
+            const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(calculatedBest));
+            const dnfOrDns =  withoutBest.find(a => a === -1 || a === -2);
+            const worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+            const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
+    
+            const calculatedAvg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
+
+            if (calculatedAvg !== r.average) {
                 res.status(400).json({ message: 'average is incorrect! '});
 
                 return;

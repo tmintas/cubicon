@@ -8,7 +8,6 @@ import { Contest } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
-import { rawListeners } from 'process';
 
 type ResultUIItem = {
     id: number | null,
@@ -19,6 +18,7 @@ type ResultUIItem = {
     attempt5: string | null,
     best: string | null,
     average: string | null,
+    roundId: number,
 
     // indicates that the result is being edited
     isEditing: boolean,
@@ -28,8 +28,6 @@ type ResultUIItem = {
 
     // TODO make id instead of string
     performedByStr: string | null,
-
-    roundId: number,
 }
 
 type ResultsTableState = {
@@ -109,19 +107,11 @@ const EditResults = () => {
         }
     }, []);
 
-    // useEffect(() => {
-    //     console.log('my effect');
-    //     console.log('items changed:');
-    //     console.log(state.contestResults);    
-    //     setState((state) => {
-    //         return {
-    //             ...state,
-    //             contestResults: state.contestResults.sort
-    //         };
-    //     })    
-    // }, state.contestResults.map(r => r.average));
-
+    // transfors the input attempt in milliseconds to a readable format 'MM:SS.ms'
     const toDelimitedString = (resultMs: number) => {
+        if (resultMs === -1) return 'DNF';
+        if (resultMs === -2) return 'DNS';
+
         const minutes = Math.floor(resultMs / 6000);
         const seconds = Math.floor((resultMs - 6000 * minutes) / 100);
         const milliseconds = resultMs - 6000 * minutes - seconds * 100;
@@ -129,8 +119,12 @@ const EditResults = () => {
         return `${minutes > 0 ? minutes + ':' : ''}${seconds}.${milliseconds < 10 ? '0' + milliseconds : milliseconds}`;
     }
 
+    // transorms the input attempt string to milliseconds
     const toMilliseconds = (resultRaw: string | null) => {
         if (!resultRaw) return 0;
+
+        if (resultRaw === 'DNF') return -1;
+        if (resultRaw === 'DNS') return -2;
 
         const milliseconds: number = +resultRaw.split('.')[1];
 
@@ -148,13 +142,23 @@ const EditResults = () => {
         return minutes * 6000 + seconds * 100 + milliseconds;
     }
 
-    // TODO add DNF, DNS
+    // TODO add -1, -2
     const getBestAndAverage: (result: ResultUIItem) => [number, number] = (result: ResultUIItem) => {
-        const results = [ result.attempt1, result.attempt2, result.attempt3, result.attempt4, result.attempt5 ].map(r => toMilliseconds(r));
+        const attempts = [ result.attempt1, result.attempt2, result.attempt3, result.attempt4, result.attempt5 ].map(r => toMilliseconds(r));
 
-        const best = results.reduce((prev, cur) => cur < prev ? cur : prev, results[0]);
-        const withoutBest: number[] = results.filter((_, i) => i !== results.indexOf(best));
-        const worst = withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+        const best = attempts.every(a => a === -1 || a === -2) 
+            ? attempts[0]
+            : attempts.filter(a => a !== -1 && a !== -2).sort((a, b) => a - b)[0];
+
+        // if all attempts are -1/-2 or there are 2 -1's, don't calculate average
+        if (best < 0 || attempts.filter(a => a === -1 || a === -2).length > 1) 
+            return [best, -1];
+
+        const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(best));
+
+        const dnfOrDns =  withoutBest.find(a => a === -1 || a === -2);
+        let worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+
         const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
 
         const avg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
@@ -316,11 +320,13 @@ const EditResults = () => {
     }
 
     // UI variables
-    // valid values: '9.43', '19.43', '1:19.03', '12:19.03', '59:19.03'
+    // valid values: '9.43', '19.43', '1:19.03', '12:19.03', '59:19.03', -1, -2
     const isAttemptInputValid = (rawValue: string | null) => {
         if (!rawValue) return false;
 
-        const containsOnlyAllowed = /^[\d:\.]+$/.test(rawValue);
+        if (rawValue === 'DNF' || rawValue === 'DNS') return true;
+
+        const containsOnlyAllowed = /^[\d:\.S]+$/.test(rawValue);
         const chars: string[] = rawValue.split('');
         const isOrderCorrect = chars.indexOf(':') < chars.indexOf('.');
         const specialCharsCount = chars.filter((c: string) => c === ':' || c === '.').length;
@@ -347,9 +353,29 @@ const EditResults = () => {
 
     const contestIdNumber = Number(contestId);
     const editingResult = state.editingResult;
+
+    const sortResults = (previous: ResultUIItem, next: ResultUIItem) => {
+        const avg1 = toMilliseconds(previous.average);
+        const avg2 = toMilliseconds(next.average);
+        const best1 = toMilliseconds(previous.best);
+        const best2 = toMilliseconds(next.best);
+
+        // if both averages are -1/-2, sort by bests
+        if (avg1 < 0 && avg2 < 0) {
+            // if both bests are -1/-2, sort by competitor names
+            if (best1 < 0 && best2 < 0) {
+                return !!previous.performedByStr && !!next.performedByStr && previous.performedByStr > next.performedByStr ? 1 : -1;
+            }
+
+            return !!best1 && !!best2 && best1 > best2 ? 1 : -1;
+        }
+
+        return !!avg1 && !!avg2 && avg2 !== -1 && avg2 !== -2 && avg1 > avg2 ? 1 : -1;
+    }
+
     const selectedRoundResults = state.contestResults
         .filter(r => r.roundId === state.selectedRoundId)
-        .sort((a, b) => !!a.average && !!b.average && toMilliseconds(a.average) > toMilliseconds(b.average) ? 1 : -1);
+        .sort((a, b) => sortResults(a, b));
 
     const isEditingResultValid = [
         editingResult.attempt1, 
