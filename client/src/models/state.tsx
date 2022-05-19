@@ -39,3 +39,11 @@ export type ContestListState = {
     isLoaded: boolean,
     contests: Contest[],
 }
+
+export interface Notification {
+    message: string,
+}
+
+export type ErrorHandlerProps = {
+    setNotifications: any,
+}

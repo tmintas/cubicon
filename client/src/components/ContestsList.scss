@@ -21,6 +21,7 @@ h2 {
 
 .list-container {
     overflow-y: auto;
+    min-height: 81px;
 }
 
 .actions-container {
@@ -80,7 +81,7 @@ h2 {
         justify-content: space-around;
 
         .action-icon {
-            color: #BCB7B7;
+            color: white;
             height: 22px;
             width: 22px;
             border-radius: 8px;

@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { RoundType } from "../models/state";
+import { ErrorHandlerProps, RoundType, Notification } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
 
@@ -30,7 +30,7 @@ type ContestFormState = {
 // add form validation
 // add other events, 4x4, 5x5 etc
 // add loading indicator
-const EditContestForm = () => {
+const EditContestForm = (props: ErrorHandlerProps) => {
     let navigate = useNavigate();
     const { id } = useParams();
     const idNumber =  Number(id);
@@ -72,6 +72,17 @@ const EditContestForm = () => {
         }
     }, []);
 
+    // TODO add other types of notifications
+    // combine methods into centralized error handler from different components
+    const addNotification = (notification: Notification) => {
+        props.setNotifications((notifications: Notification[]) => {
+            return [
+                ...notifications,
+                notification,
+            ]
+        });
+    }
+
     const handleSubmit = async () => {
         const formData = {
             "name": formState.name,
@@ -100,7 +111,9 @@ const EditContestForm = () => {
             });
         }
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            addNotification({ message: 'Произошла ошибка при сохранении контеста. Повторите попытку позже.' });
+        };
 
         navigate('../contests');
     }
@@ -157,7 +170,8 @@ const EditContestForm = () => {
                 <td>
                     {r.name}
                 </td>
-                <td>
+                {/* TODO add different round formats     */}
+                {/* <td>
                     <div>
                         <input
                             id="r1"
@@ -182,7 +196,7 @@ const EditContestForm = () => {
                         <label htmlFor="r1"> среднее из 3</label>
                     </div>
                 </td>
-                <td className="empty"></td>
+                <td className="empty"></td> */}
             </tr>
         )
     });

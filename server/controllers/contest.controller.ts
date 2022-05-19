@@ -120,8 +120,6 @@ export const updateContest = async (req: any, res: any) => {
         res.status(200).json(updated);
     }
     catch (error: any) {
-        console.log('error ');
-        
         console.log(error);
         
         res.status(404).json({ message: error.message });

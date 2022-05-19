@@ -4,12 +4,13 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Contest } from '../models/state';
+import { Contest, ErrorHandlerProps } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
 import { DNF, DNS, DNF_DISPLAY_VALUE, DNS_DISPLAY_VALUE } from '../constants';
 import ErrorIcon from '@mui/icons-material/Error';
+import { Notification } from '../models/state';
 
 type ResultUIItem = {
     id: number | null,
@@ -46,7 +47,7 @@ type ResulstFormState = {
 // TODO use react-hook-form for form handling
 // TODO add validation error messages
 // TODO add tooltips
-const EditResults = () => {
+const EditResults = (props: ErrorHandlerProps) => {
     const navigate = useNavigate();
     const { id: contestId } = useParams();
     const defaultEditingResult = {
@@ -105,9 +106,23 @@ const EditResults = () => {
                         contestResults,
                         editingResult: defaultEditingResult,
                     });
+                })
+                .catch(() => {
+                    addNotification({ message: 'Произошла ошибка при загрузке контеста. Повторите попытку позже.' });
                 });
         }
     }, []);
+
+    // TODO add other types of notifications
+    // combine methods from different components
+    const addNotification = (notification: Notification) => {
+        props.setNotifications((notifications: Notification[]) => {
+            return [
+                ...notifications,
+                notification,
+            ]
+        });
+    }
 
     // transfors the input attempt in milliseconds to a readable format 'MM:SS.ms'
     const toDelimitedString = (resultMs: number) => {
@@ -316,6 +331,10 @@ const EditResults = () => {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(results),
         });
+
+        if (!res.ok) {
+            addNotification({ message: 'Произошла ошибка при сохранении результато. Повторите попытку позже.' });
+        }
 
         navigate('../contests');
     }
