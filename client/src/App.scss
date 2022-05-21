@@ -5,11 +5,37 @@ html, body, #root {
     margin: 0;
     height: 100%;
     font-family: 'Roboto', sans-serif;
-    color: #eeeeee;
+    color: $gray;
 }
 
 #root {
     display: flex;
+}
+
+input {
+    box-sizing: border-box;
+    color: $gray;
+    font-size: 15px;
+    background-color: $secondary;
+    border: none;
+    border-bottom: 1px solid $dark-gray;
+    outline: none;
+    padding-left: 12px;
+
+    &:hover:not(:disabled), &:focus:not(:disabled) {
+        border-bottom-color: white;
+        cursor: text;
+    }
+
+    &:disabled {
+        color: #505153;
+    }
+}
+
+// date picker
+.MuiFormControl-root input {
+    padding: 15px;
+    color: $gray;
 }
 
 .nav-menu {

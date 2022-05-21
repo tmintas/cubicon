@@ -47,3 +47,9 @@ export interface Notification {
 export type ErrorHandlerProps = {
     setNotifications: any,
 }
+
+export type User = {
+    id: number,
+    firstName: string,
+    lastName: string,
+}

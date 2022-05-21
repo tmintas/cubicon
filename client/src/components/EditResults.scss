@@ -29,7 +29,7 @@
     }
 
     .error-icon {
-        color: $dark-red;
+        color: $yellow;
         margin-left: 8px;
     }
 }
@@ -88,18 +88,9 @@
 
             input {
                 width: 80%;
-                color: $light-gray;
-                font-size: 15px;
                 text-align: center;
-                background-color: $secondary;
-                border: none;
-                border-bottom: 1px solid #7a7c80;
-                outline: none;
+                padding: 0;
                 padding-bottom: 3px;
-
-                &:hover:not(:disabled), &:focus:not(:disabled) {
-                    border-bottom-color: lighten(#bcb7b7, 10);
-                }
 
                 &.name-input {
                     width: 95%;

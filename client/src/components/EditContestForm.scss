@@ -9,91 +9,28 @@
     height: auto;
     border-radius: 10px;
 
-    .calendar-container {
-        display: inline-block;
-        vertical-align: top;
-        width: 50%;
-
-        // customize calendar styles
-        .MuiOutlinedInput-input {
-            border: none;
-            border-radius: 8px;
-        }
-
-        .MuiOutlinedInput-root {
-            border-radius: 8px;
-        }
-
-        label.date-label {
-            width: 100%;
-            text-align: left;
-            margin-bottom: 15px;
-        }
-    }
-
-    .city-container {
-        display: flex;
-        width: 80%;
-        vertical-align: top;
-        margin-top: 25px;
-
-        #city-label {
-            flex-basis: 50%;
-        }
-
-        #city-input {
-            flex-grow: 1;
-        }
-    }
-
     label {
-        display: inline-block;
         width: 100%;
         text-align: left;
     }
 
-    input {
-        width: 100%;
-        padding: 0 10px 3px;
-        background-color: $secondary;
-        border: none;
-        border-bottom: 1px solid #505153;
-        outline: none;
-        color: #bcb7b7;
-
-        &:disabled {
-            color: #505153;
-        }
-
-        &:hover:not(:disabled), &:focus:not(:disabled) {
-            border-bottom-color: lighten(#bcb7b7, 10);
-        }
-    }
-
-    .MuiFormControl-root input {
-        padding: 15px;
-    }
-
-    table {
-        width: 100%;
-        border: none;
-        border-spacing: 0;
-    }
-
     table.main-info-table { 
-        width: 50%;
-        display: inline-block;
+        width: 100%;
+
+        input {
+            width: 100%;
+        }
 
         tr.empty {
             height: 30px;
         }
 
         td:nth-child(1), td:nth-child(3) {
-            width: 30%;
+            width: 15%;
         }
 
         td:nth-child(2), td:nth-child(4) {
-            width: 45%;
+            width: 30%;
             padding-right: 60px;
         }
     }

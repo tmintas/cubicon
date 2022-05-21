@@ -5,9 +5,10 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { ErrorHandlerProps, RoundType, Notification } from "../models/state";
+import { ErrorHandlerProps, RoundType, Notification, User } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 type RoundItem = {
     name: string,
@@ -19,15 +20,19 @@ type ContestFormState = {
     city: string,
     date: Date,
     vkLink: string,
-    organizedById: any,
-    organizedBy: any,
+    organizedById: number | null,
     rounds: RoundItem[],
+    allUserOptions: UserOption[],
+}
+
+interface UserOption {
+    displayName: string
+    userId: number,
+    disabled: boolean,
 }
 
 // TODO
-// make organizator as an autocomplete input
 // test date locales
-// add form validation
 // add other events, 4x4, 5x5 etc
 // add loading indicator
 const EditContestForm = (props: ErrorHandlerProps) => {
@@ -46,31 +51,69 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         city: 'Казань',
         date: new Date(),
         vkLink: '',
-        organizedById: 3,
-        organizedBy: null,
+        organizedById: null,
         rounds: [availableRounds[0]],
+        allUserOptions: [],
     });
 
+    const [ selectedUserOption, setSelectedUserOption ] = useState<UserOption | null>(null);
+    const filterUser = createFilterOptions<UserOption>();
+    const addParticipantText = 'Создать участника: ';
+
     useEffect(() => {
-        if (idNumber > 0) {
-            fetch(`http://localhost:3000/contests/${id}`, {
+        const getContestInfo = idNumber > 0 
+            ? fetch(`http://localhost:3000/contests/${id}`, 
+            {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
             })
-                .then(r => r.json())
-                .then(res => {
+            : Promise.resolve(null);
+
+        const getUsers = fetch(`http://localhost:3000/users`, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'},
+        })
+
+        // TODO refactor - when there are too many users, it will slow down the app. Do not load all users at once
+        Promise.all([getContestInfo, getUsers])
+            .then(r => Promise.all(r.map(res => !res ? Promise.resolve(null) : res.json())))
+            .then(([contestInfo, users]) => {
+                if (contestInfo) {
+                    // populate form with contest data
                     setFormState({
-                        name: res.name,
-                        city: res.city,
-                        date: res.date,
-                        vkLink: res.vkUrl,
-                        organizedById: 3,
-                        organizedBy: null,
-                        rounds: res.rounds ?? []
+                        name: contestInfo.name,
+                        city: contestInfo.city,
+                        date: contestInfo.date,
+                        vkLink: contestInfo.vkUrl,
+                        organizedById: contestInfo.organizedById,
+                        rounds: contestInfo.rounds,
+                        allUserOptions: [],
+                    });
+
+                    // preselect organizer autocomplete with contest data
+                    setSelectedUserOption({ 
+                        userId: contestInfo.organizedById, 
+                        disabled: false, 
+                        displayName: getUserDisplayName(users.find((u: User) => u.id === contestInfo.organizedById)),
                     })
-                });
-        }
+                }
+
+                setFormState(state => {
+                    return {
+                        ...state,
+                        allUserOptions: users.map((u: User) => {
+                            return { displayName: getUserDisplayName(u), userId: u.id, disabled: false };
+                        }),
+                    }
+                })
+            });
     }, []);
+
+    console.log(formState);
+    
+    const getUserDisplayName = (user: User): string => {
+        return `${user.firstName} ${user.lastName}`;
+    }
 
     // TODO add other types of notifications
     // combine methods into centralized error handler from different components
@@ -118,6 +161,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         navigate('../contests');
     }
 
+    // TODO add themes on a global app level
     const darkTheme = createTheme({
         palette: {
           mode: 'dark',
@@ -160,7 +204,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
     }
 
     const isFormValid = () => {
-        return !!formState.city && !!formState.name;
+        return !!formState.city && !!formState.name && formState.organizedById !== null;
     }
 
     const roundItems = formState.rounds?.map(r => {
@@ -203,6 +247,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
     return (
         <>
+            <ThemeProvider theme={darkTheme}>
             <div className="info-container">
                 {idNumber === 0 ? 'Создание нового контеста' : 'Редактирование контеста'}
             </div>
@@ -215,13 +260,98 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                                 <label id="organizer-label" htmlFor="organizer-input">Организатор *</label>
                             </td>
                             <td>
-                                <input
-                                    id="organizer-input"
-                                    type="text"
-                                    disabled
-                                    value={'Тимур Фролов'}
-                                    // onChange={(e) => setFormState({ ...formState, organizer: e.target.value })}
+                                <Autocomplete 
+                                    className="organizer-input"
+                                    filterOptions={(_, params) => {
+                                        const { inputValue } = params;
+
+                                        // do not show anything until user types 3 symbols
+                                        if (inputValue.length < 3) 
+                                            return [ { displayName: `Введите мин. 3 символа`, userId: 0, disabled: true } ];
+
+                                        // show loading indicator
+                                        // TODO test with slow backend responses
+                                        if (!formState.allUserOptions.length) 
+                                            return [ { displayName: 'Загрузка...', userId: 0, disabled: true }];
+
+                                        const filtered = filterUser(formState.allUserOptions, params);
+
+                                        // add participant opion
+                                        if (!filtered.length) 
+                                            return [ { displayName: `${addParticipantText}${inputValue}`, userId: 0, disabled: false } ];
+
+                                        return filtered;
+                                    }}
+                                    getOptionLabel={(option) => {
+                                        return option.displayName;
+                                    }}
+                                    value={selectedUserOption}
+                                    onChange={(_, option) => {
+                                        setSelectedUserOption(option);
+
+                                        setFormState(state => {
+                                            return {
+                                                ...state,
+                                                organizedById: option?.userId ?? 0,
+                                            }
+                                        })
+                                    }}      
+                                    options={[]}
+                                    renderInput={(params) => {
+                                        // vs code complains about value property of inputProps here, so add 'any'
+                                        const props = params.inputProps as any;
+                                        const optionDisplayValue = props.value;
+                                        
+                                        // remove add participant text after selection
+                                        if (optionDisplayValue.indexOf(addParticipantText) > -1) {
+                                            props.value = optionDisplayValue.split(addParticipantText)[1];
+                                        }
+
+                                        return (
+                                            <TextField {...params} label="Выберите пользователя:" />
+                                        )
+                                    }}
+                                    renderOption={(props, option) => {
+                                        const { displayName } = option;
+                                        return (
+                                          <span {...props} style={{ color: '#bcb7b7' }}>
+                                            {displayName}
+                                          </span>
+                                        );
+                                    }}
+                                    getOptionDisabled={(option) => option.disabled}
                                 />
+                            </td>
+                            <td>
+                                <label className="date-label">Дата проведения</label>
+                            </td>
+                            <td>
+                                <LocalizationProvider dateAdapter={AdapterMoment}>
+                                    <DatePicker
+                                        shouldDisableDate={(date: moment.Moment) => {
+                                            // disable previous days, but allow today
+                                            const today = moment().toDate();
+                                            today.setHours(0);
+                                            today.setMinutes(0);
+                                            today.setSeconds(0);
+                                            today.setMilliseconds(0);
+
+                                            const calendarDate = date.toDate();
+                                            calendarDate.setHours(0);
+                                            calendarDate.setMinutes(0);
+                                            calendarDate.setSeconds(0);
+                                            calendarDate.setMilliseconds(0);
+
+                                            return calendarDate < today;
+                                        }}
+                                        value={formState.date}
+                                        onChange={(date: any) => {
+                                            setFormState({ ...formState, date: (date.toDate()) })
+                                        }}
+                                        renderInput={(params) => <TextField {...params} />}
+                                        
+                                    />
+                                </LocalizationProvider>
                             </td>
                         </tr>
                         <tr className="empty"></tr>
@@ -251,54 +381,23 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                                     onChange={(e) => setFormState({ ...formState, vkLink: e.target.value })}
                                 />
                             </td>
+                            <td>
+                                <label id="city-label" htmlFor="city-input">Город *</label>
+                            </td>
+
+                            <td>
+                                <input
+                                    id="city-input"
+                                    type="text"
+                                    value='Казань'
+                                    disabled
+                                    onChange={(e) => setFormState({ ...formState, city: e.target.value })}
+                                />
+                            </td>
                         </tr>
                         <tr className="empty"></tr>
                     </tbody>
                 </table>
-
-                <div className="calendar-container">
-                    <label className="date-label">Дата проведения</label>
-                    <ThemeProvider theme={darkTheme}>
-                        <LocalizationProvider
-                            dateAdapter={AdapterMoment}
-                        >
-                            <DatePicker
-                            shouldDisableDate={(date: moment.Moment) => {
-                                // disable previous days, but allow today
-                                const today = moment().toDate();
-                                today.setHours(0);
-                                today.setMinutes(0);
-                                today.setSeconds(0);
-                                today.setMilliseconds(0);
-
-                                const calendarDate = date.toDate();
-                                calendarDate.setHours(0);
-                                calendarDate.setMinutes(0);
-                                calendarDate.setSeconds(0);
-                                calendarDate.setMilliseconds(0);
-
-                                return calendarDate < today;
-                            }}
-                                value={formState.date}
-                                onChange={(date: any) => {
-                                    setFormState({ ...formState, date: (date.toDate()) })
-                                }}
-                                renderInput={(params) => <TextField {...params} />}
-                            />
-                        </LocalizationProvider>
-                    </ThemeProvider>
-
-                    <div className="city-container">
-                        <label id="city-label" htmlFor="city-input">Город *</label>
-                        <input
-                            id="city-input"
-                            type="text"
-                            value='Казань'
-                            disabled
-                            onChange={(e) => setFormState({ ...formState, city: e.target.value })}
-                        />
-                    </div>
-                </div>
 
                 <div className="events-container">
                     <div className="events-label">Дисциплины</div>
@@ -342,6 +441,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                     <FormButton onClick={async () => { await handleSubmit(); }} disabled={!isFormValid()} text="Сохранить"></FormButton>
                 </div>
             </div>
+            </ThemeProvider>
         </>
     );
 }

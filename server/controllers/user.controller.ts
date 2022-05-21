@@ -2,9 +2,9 @@ import { prisma } from "..";
 
 export const getAllUsers = async (req: any, res: any) => {
     try {
-        const postMessages = await prisma.user.findMany();
+        const users = await prisma.user.findMany();
 
-        res.status(200).json(postMessages);
+        res.status(200).json(users);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });
