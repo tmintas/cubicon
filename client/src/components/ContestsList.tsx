@@ -109,6 +109,37 @@ const ContestList = () => {
         navigate(`../edit-results/${contestId}`);
     }
 
+    const getContestItem = (c: Contest) => {
+        return (
+            <div className="list-item" key={c.id}>
+                <div className="actions-menu actions-menu-left">
+                </div>
+                <div className="contest-preview" key={c.name}>
+                    <div className="main-info">
+                        <p>{c.name}</p>
+                        <p>{getReadableDate(new Date(c.date))}</p>
+                        {c.city ? <p>{c.city}</p> : null}
+                        {c.organizedBy ? <p>{c.organizedBy.firstName + ' ' + c.organizedBy.lastName}</p> : null}
+                    </div>
+                    <hr />
+                    <div className="additional-info">
+                        {getEventItems(c)}
+                    </div>
+                </div>
+                <div className="actions-menu actions-menu-right">
+                    {
+                        state.showUpcoming &&
+                        <>
+                            <BallotIcon className="action-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
+                            <EditIcon className="action-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
+                            <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
+                        </>
+                    }
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="tabs">
@@ -117,36 +148,13 @@ const ContestList = () => {
             </div>
 
             <div className="list-container">
-                {state.displayedContests.map(c => {
-                    return (
-                        <div className="list-item" key={c.id}>
-                            <div className="actions-menu actions-menu-left">
-                            </div>
-                            <div className="contest-preview" key={c.name}>
-                                <div className="main-info">
-                                    <p>{c.name}</p>
-                                    <p>{getReadableDate(new Date(c.date))}</p>
-                                    {c.city ? <p>{c.city}</p> : null}
-                                    {c.organizedBy ? <p>{c.organizedBy.firstName + ' ' + c.organizedBy.lastName}</p> : null}
-                                </div>
-                                <hr />
-                                <div className="additional-info">
-                                    {getEventItems(c)}
-                                </div>
-                            </div>
-                            <div className="actions-menu actions-menu-right">
-                                {
-                                    state.showUpcoming &&
-                                    <>
-                                        <BallotIcon className="action-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
-                                        <EditIcon className="action-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
-                                        <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
-                                    </>
-                                }
-                            </div>
+                {
+                    !state.displayedContests.length 
+                        ? <div style={{ 'padding': '20px' }}>
+                            Нет {state.showUpcoming ? ' предстоящих' : 'прошедших'} контестов
                         </div>
-                    )
-                })}
+                        : state.displayedContests.map(c =>  getContestItem(c))
+                }
             </div>
 
             <div className="actions-container">

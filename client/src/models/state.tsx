@@ -26,7 +26,7 @@ export type Result = {
     attempt5: number,
     best: number,
     average: number,
-    performedByStr: string,
+    performedById: number,
     roundId: number,
 }
 
@@ -53,3 +53,11 @@ export type User = {
     firstName: string,
     lastName: string,
 }
+
+export interface UserOption {
+    displayName: string
+    userId: number,
+    disabled: boolean,
+}
+
+export const ADD_NEW_USER_OPTION_VALUE = 0;

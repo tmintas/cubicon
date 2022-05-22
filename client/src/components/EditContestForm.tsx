@@ -1,14 +1,13 @@
 import moment from "moment";
 import { useEffect, useState } from "react";
 import "./EditContestForm.scss";
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { ErrorHandlerProps, RoundType, Notification, User } from "../models/state";
+import { ErrorHandlerProps, RoundType, Notification, User, UserOption, ADD_NEW_USER_OPTION_VALUE } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import UsersAutocomplete from "./shared/UsersAutocomplete";
 
 type RoundItem = {
     name: string,
@@ -25,20 +24,14 @@ type ContestFormState = {
     allUserOptions: UserOption[],
 }
 
-interface UserOption {
-    displayName: string
-    userId: number,
-    disabled: boolean,
-}
-
 // TODO
 // test date locales
 // add other events, 4x4, 5x5 etc
 // add loading indicator
 const EditContestForm = (props: ErrorHandlerProps) => {
     let navigate = useNavigate();
-    const { id } = useParams();
-    const idNumber =  Number(id);
+    const { id: contestId } = useParams();
+    const contestIdNum =  Number(contestId);
 
     const availableRounds: RoundItem[] = [
         { name: '3x3 финал', type: RoundType.AVERAGE_OF_5 },
@@ -57,12 +50,10 @@ const EditContestForm = (props: ErrorHandlerProps) => {
     });
 
     const [ selectedUserOption, setSelectedUserOption ] = useState<UserOption | null>(null);
-    const filterUser = createFilterOptions<UserOption>();
-    const addParticipantText = 'Создать участника: ';
 
     useEffect(() => {
-        const getContestInfo = idNumber > 0 
-            ? fetch(`http://localhost:3000/contests/${id}`, 
+        const getContestInfo = contestIdNum > 0 
+            ? fetch(`http://localhost:3000/contests/${contestId}`, 
             {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
@@ -109,8 +100,16 @@ const EditContestForm = (props: ErrorHandlerProps) => {
             });
     }, []);
 
-    console.log(formState);
-    
+    const onOrganizerSelect = (userOption: UserOption | null) => {
+        setSelectedUserOption(userOption);
+        setFormState(state => {
+            return {
+                ...state,
+                organizedById: userOption?.userId ?? null,
+            }
+        })
+    }
+
     const getUserDisplayName = (user: User): string => {
         return `${user.firstName} ${user.lastName}`;
     }
@@ -138,7 +137,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
         let response;
 
-        if (idNumber === 0) {
+        if (contestIdNum === 0) {
             response = await fetch(`http://localhost:3000/contests/`,
             {
                 method: 'POST',
@@ -146,7 +145,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                 body: JSON.stringify(formData),
             });
         } else {
-            response = await fetch(`http://localhost:3000/contests/${id}`,
+            response = await fetch(`http://localhost:3000/contests/${contestId}`,
             {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
@@ -160,13 +159,6 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
         navigate('../contests');
     }
-
-    // TODO add themes on a global app level
-    const darkTheme = createTheme({
-        palette: {
-          mode: 'dark',
-        },
-    });
 
     const addNewRound = () => {
         const addedRounds = formState.rounds;
@@ -247,9 +239,8 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
     return (
         <>
-            <ThemeProvider theme={darkTheme}>
             <div className="info-container">
-                {idNumber === 0 ? 'Создание нового контеста' : 'Редактирование контеста'}
+                {contestIdNum === 0 ? 'Создание нового контеста' : 'Редактирование контеста'}
             </div>
             <div inline-datepicker="true" data-date="02/25/2022"></div>
             <div className="create-contest-form">
@@ -260,67 +251,13 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                                 <label id="organizer-label" htmlFor="organizer-input">Организатор *</label>
                             </td>
                             <td>
-                                <Autocomplete 
-                                    className="organizer-input"
-                                    filterOptions={(_, params) => {
-                                        const { inputValue } = params;
-
-                                        // do not show anything until user types 3 symbols
-                                        if (inputValue.length < 3) 
-                                            return [ { displayName: `Введите мин. 3 символа`, userId: 0, disabled: true } ];
-
-                                        // show loading indicator
-                                        // TODO test with slow backend responses
-                                        if (!formState.allUserOptions.length) 
-                                            return [ { displayName: 'Загрузка...', userId: 0, disabled: true }];
-
-                                        const filtered = filterUser(formState.allUserOptions, params);
-
-                                        // add participant opion
-                                        if (!filtered.length) 
-                                            return [ { displayName: `${addParticipantText}${inputValue}`, userId: 0, disabled: false } ];
-
-                                        return filtered;
-                                    }}
-                                    getOptionLabel={(option) => {
-                                        return option.displayName;
-                                    }}
-                                    value={selectedUserOption}
-                                    onChange={(_, option) => {
-                                        setSelectedUserOption(option);
-
-                                        setFormState(state => {
-                                            return {
-                                                ...state,
-                                                organizedById: option?.userId ?? 0,
-                                            }
-                                        })
-                                    }}      
-                                    options={[]}
-                                    renderInput={(params) => {
-                                        // vs code complains about value property of inputProps here, so add 'any'
-                                        const props = params.inputProps as any;
-                                        const optionDisplayValue = props.value;
-                                        
-                                        // remove add participant text after selection
-                                        if (optionDisplayValue.indexOf(addParticipantText) > -1) {
-                                            props.value = optionDisplayValue.split(addParticipantText)[1];
-                                        }
-
-                                        return (
-                                            <TextField {...params} label="Выберите пользователя:" />
-                                        )
-                                    }}
-                                    renderOption={(props, option) => {
-                                        const { displayName } = option;
-                                        return (
-                                          <span {...props} style={{ color: '#bcb7b7' }}>
-                                            {displayName}
-                                          </span>
-                                        );
-                                    }}
-                                    getOptionDisabled={(option) => option.disabled}
-                                />
+                                <UsersAutocomplete 
+                                    allUserOptions={formState.allUserOptions} 
+                                    selectedUserOption={selectedUserOption}
+                                    onUserSelect={onOrganizerSelect}
+                                    addNewUserOptionValue={ADD_NEW_USER_OPTION_VALUE}
+                                >
+                                </UsersAutocomplete>
                             </td>
                             <td>
                                 <label className="date-label">Дата проведения</label>
@@ -441,7 +378,6 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                     <FormButton onClick={async () => { await handleSubmit(); }} disabled={!isFormValid()} text="Сохранить"></FormButton>
                 </div>
             </div>
-            </ThemeProvider>
         </>
     );
 }

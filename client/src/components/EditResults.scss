@@ -80,20 +80,22 @@
         }
 
         tr.input-row {
+            font-size: 15px;
             height: 48px;
 
             td {
                 text-align: center;
             }
 
+            .MuiOutlinedInput-root {
+                height: 56px;
+            }
+
             input {
                 width: 80%;
-                text-align: center;
-                padding: 0;
-                padding-bottom: 3px;
 
-                &.name-input {
-                    width: 95%;
+                &.res-input {
+                    width: 80%;
                 }
             }
 

@@ -6,9 +6,9 @@ const DNS = -2;
 
 export const getAllResults = async (req: any, res: any) => {
     try {
-        const postMessages = await prisma.result.findMany();
+        const results: Result[] = await prisma.result.findMany();
 
-        res.status(200).json(postMessages);
+        res.status(200).json(results);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });
@@ -35,7 +35,7 @@ export const updateResults = async (req: any, res: any) => {
         }
 
         // check results validity
-        if (results.some(r => !r.performedByStr || !isAttemptValid(r.attempt1) || !isAttemptValid(r.attempt2) ||
+        if (results.some(r => !isAttemptValid(r.attempt1) || !isAttemptValid(r.attempt2) ||
                               !isAttemptValid(r.attempt3) || !isAttemptValid(r.attempt4) || !isAttemptValid(r.attempt5))) {
             res.status(400).json({ message: 'some of the results has an empty or negative value'});
 
@@ -89,7 +89,6 @@ export const updateResults = async (req: any, res: any) => {
                     best: r.best,
                     average: r.average,
                     roundId: r.roundId,
-                    performedByStr: r.performedByStr,
                     performedById: r.performedById,
                 }
             }),

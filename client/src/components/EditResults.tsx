@@ -4,13 +4,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Contest, ErrorHandlerProps } from '../models/state';
+import { ADD_NEW_USER_OPTION_VALUE, Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
 import { DNF, DNS, DNF_DISPLAY_VALUE, DNS_DISPLAY_VALUE } from '../constants';
 import ErrorIcon from '@mui/icons-material/Error';
 import { Notification } from '../models/state';
+import UsersAutocomplete from './shared/UsersAutocomplete';
 
 type ResultUIItem = {
     id: number | null,
@@ -21,6 +22,7 @@ type ResultUIItem = {
     attempt5: string | null,
     best: string | null,
     average: string | null,
+    performedById: number | null,
     roundId: number,
 
     // indicates that the result is being edited
@@ -29,8 +31,6 @@ type ResultUIItem = {
     // indicates that the result was added using UI and not sent to backend yet
     isAdded: boolean,
 
-    // TODO make id instead of string
-    performedByStr: string | null,
 }
 
 type ResulstFormState = {
@@ -52,7 +52,7 @@ const EditResults = (props: ErrorHandlerProps) => {
     const { id: contestId } = useParams();
     const defaultEditingResult = {
         id: null,
-        performedByStr: null,
+        performedById: null,
         attempt1: null,
         attempt2: null,
         attempt3: null,
@@ -73,16 +73,35 @@ const EditResults = (props: ErrorHandlerProps) => {
         contestResults: [],
         editingResult: defaultEditingResult,
     });
+    const [ selectedUserOption, setSelectedUserOption ] = useState<UserOption | null>(null);
+    const [ allUserOptions, setAllUserOptions ] = useState<UserOption[]>([]);
+
+    const getUserDisplayName = (user: User): string => {
+        return `${user.firstName} ${user.lastName}`;
+    }
 
     useEffect(() => {
         if (contestIdNumber > 0) {
-            fetch(`http://localhost:3000/contests/${contestIdNumber}`, {
+            const getContest = fetch(`http://localhost:3000/contests/${contestIdNumber}`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
-            })
-                .then(r => r.json())
-                .then((contest: Contest) => {
-                    const contestResults = contest.rounds.flatMap(round => round.results).map(r => {
+            });
+
+            const getUsers = fetch(`http://localhost:3000/users`, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'},
+            });
+
+            // TODO error handling
+            Promise.all([ getContest, getUsers ])
+                .then(r => Promise.all(r.map(res => !res ? Promise.resolve(null) : res.json())))
+                .then(([contest, users]) => {
+                    // TODO find a way to preserve return types
+                    setAllUserOptions(users.map((u: User) => {
+                        return { displayName: getUserDisplayName(u), userId: u.id, disabled: false };
+                    }));
+
+                    const contestResults = (contest as Contest).rounds.flatMap(round => round.results).map(r => {
                         const resultUIItem = {
                             id: r.id,
                             attempt1: toDelimitedString(r.attempt1),
@@ -92,7 +111,7 @@ const EditResults = (props: ErrorHandlerProps) => {
                             attempt5: toDelimitedString(r.attempt5),
                             best: toDelimitedString(r.best),
                             average: toDelimitedString(r.average),
-                            performedByStr: r.performedByStr,
+                            performedById: r.performedById,
                             roundId: r.roundId,
                         } as ResultUIItem;
 
@@ -223,7 +242,9 @@ const EditResults = (props: ErrorHandlerProps) => {
                     return r;
                 }),
             }
-        })
+        });
+
+        setSelectedUserOption(null);
     }
 
     const onResultSaveClick = () => {        
@@ -265,18 +286,17 @@ const EditResults = (props: ErrorHandlerProps) => {
         });
     }
 
-    const onNameChange = (event: any) => {
-        const performedByStr = event.target.value as string;
-
-        setState((state) => {
+    const onCompetitorSelect = (userOption: UserOption | null) => {
+        setSelectedUserOption(userOption);
+        setState(state => {
             return {
                 ...state,
                 editingResult: {
                     ...editingResult,
-                    performedByStr,
+                    performedById: userOption?.userId ?? null
                 },
-            };
-        });
+            }
+        })
     }
 
     const onDeleteResultClick = (result: ResultUIItem) => {
@@ -295,7 +315,7 @@ const EditResults = (props: ErrorHandlerProps) => {
                 ...state,
                 editingResult: result,
                 contestResults: [...state.contestResults].map(r => {
-                    if (r.performedByStr === result.performedByStr && r.roundId === state.selectedRoundId) {
+                    if (r.performedById === result.performedById && r.roundId === state.selectedRoundId) {
                         r.isEditing = true;
                         return r;
                     } else {
@@ -305,6 +325,9 @@ const EditResults = (props: ErrorHandlerProps) => {
                 }),
             };
         });
+
+        const userOption = allUserOptions.find(uo => uo.userId === result.performedById) as UserOption;
+        setSelectedUserOption(userOption);
     }
 
     const onSubmitClick = async () => {
@@ -319,8 +342,7 @@ const EditResults = (props: ErrorHandlerProps) => {
                 attempt5: toMilliseconds(r.attempt5),
                 best: getBestAndAverage(r)[0],
                 average: getBestAndAverage(r)[1],
-                performedByStr: r.performedByStr,
-                performedById: 3,
+                performedById: r.performedById,
             };
 
             return result;
@@ -384,7 +406,7 @@ const EditResults = (props: ErrorHandlerProps) => {
         if (avg1 < 0 && avg2 < 0) {
             // if both bests are DNF/DNS, sort by competitor names
             if (best1 < 0 && best2 < 0) {
-                return !!previous.performedByStr && !!next.performedByStr && previous.performedByStr > next.performedByStr ? 1 : DNF;
+                return !!previous.performedById && !!next.performedById && previous.performedById > next.performedById ? 1 : DNF;
             }
 
             return !!best1 && !!best2 && best1 > best2 ? 1 : DNF;
@@ -397,33 +419,37 @@ const EditResults = (props: ErrorHandlerProps) => {
         .filter(r => r.roundId === state.selectedRoundId)
         .sort((a, b) => sortResults(a, b));
 
+    // TODO add validation messages to the user
     const isEditingResultValid = [
         editingResult.attempt1, 
         editingResult.attempt2,
         editingResult.attempt3,
         editingResult.attempt4,
         editingResult.attempt5,
-    ].every(i => isAttemptInputValid(i)) && !!editingResult.performedByStr && 
-        selectedRoundResults.every(r => r.performedByStr !== editingResult.performedByStr || r.isEditing);
+    ].every(i => isAttemptInputValid(i)) && !!editingResult.performedById && 
+        // only one result for a user is allowed
+        selectedRoundResults.every(r => r.performedById !== editingResult.performedById || r.isEditing);
 
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
-        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedByStr;
+        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedById;
 
     // TSX elements
     const inputRowCells = !editingResult ? <div>empty</div> :
         <>
             <td>
-                <input
-                    type="text"
-                    className="name-input"
-                    value={state.editingResult.performedByStr ?? ''}
-                    onChange={(e) => { onNameChange(e); }}
-                />
+                <UsersAutocomplete 
+                    allUserOptions={allUserOptions} 
+                    selectedUserOption={selectedUserOption}
+                    onUserSelect={onCompetitorSelect}
+                    addNewUserOptionValue={ADD_NEW_USER_OPTION_VALUE}
+                >
+                </UsersAutocomplete>
             </td>
             <td></td>
             <td></td>
             <td>
                 <input
+                    className="res-input"
                     type="text"
                     value={state.editingResult.attempt1 ?? ''}
                     onChange={(e) => { onAttemptChange(1, e); }}
@@ -431,6 +457,7 @@ const EditResults = (props: ErrorHandlerProps) => {
             </td>
             <td>
                 <input
+                    className="res-input"
                     type="text"
                     value={state.editingResult.attempt2 ?? ''}
                     onChange={(e) => { onAttemptChange(2, e); }}
@@ -438,6 +465,7 @@ const EditResults = (props: ErrorHandlerProps) => {
             </td>
             <td>
                 <input
+                    className="res-input"
                     type="text"
                     value={state.editingResult.attempt3 ?? ''}
                     onChange={(e) => { onAttemptChange(3, e); }}
@@ -445,6 +473,7 @@ const EditResults = (props: ErrorHandlerProps) => {
             </td>
             <td>
                 <input
+                    className="res-input"
                     type="text"
                     value={state.editingResult.attempt4 ?? ''}
                     onChange={(e) => { onAttemptChange(4, e); }}
@@ -452,6 +481,7 @@ const EditResults = (props: ErrorHandlerProps) => {
             </td>
             <td>
                 <input
+                    className="res-input"
                     type="text"
                     value={state.editingResult.attempt5 ?? ''}
                     onChange={(e) => { onAttemptChange(5, e); }}
@@ -541,7 +571,8 @@ const EditResults = (props: ErrorHandlerProps) => {
                                 // TODO use id
                                 <tr key={i}>
                                     <td className='td-order'>{i+1}</td>
-                                    <td className='td-name'>{r.performedByStr}</td>
+                                    <td className='td-name'>
+                                        {allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? ''}</td>
                                     <td className='td-res'>{r.best}</td>
                                     <td className='td-res'>{r.average}</td>
                                     <td className='td-res'>{r.attempt1}</td>

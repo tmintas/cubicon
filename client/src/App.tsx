@@ -8,6 +8,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useState } from "react";
 import { Notification } from './models/state';
+import { createTheme, ThemeProvider } from "@mui/material";
 
 const App = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -20,38 +21,46 @@ const App = () => {
         })
     }
 
+    const darkTheme = createTheme({
+        palette: {
+            mode: 'dark',
+        },
+    });
+
     return (
         <BrowserRouter>
-            <nav className="nav-menu">
-                <NavLink to="/contests" className={({ isActive }) =>(isActive ? " active" : "")}>КОНТЕСТЫ</NavLink>
-            </nav>
-            <div className="main-container">
-                <div className="wrapper">
-                    <Routes>
-                        <Route path="/contests" element={<ContestsList />}></Route>
-                        <Route path="/edit-contest/:id" element={<EditContestForm setNotifications={setNotifications}/>}></Route>
-                        <Route path="/edit-results/:id" element={<EditResults setNotifications={setNotifications}/>}></Route>
-                        <Route path="/users" element={<UserList />}></Route>
-                        <Route path="/" element={<Navigate to="/contests" />}></Route>
-                    </Routes>
+            <ThemeProvider theme={darkTheme}>
+                <nav className="nav-menu">
+                    <NavLink to="/contests" className={({ isActive }) =>(isActive ? " active" : "")}>КОНТЕСТЫ</NavLink>
+                </nav>
+                <div className="main-container">
+                    <div className="wrapper">
+                        <Routes>
+                            <Route path="/contests" element={<ContestsList />}></Route>
+                            <Route path="/edit-contest/:id" element={<EditContestForm setNotifications={setNotifications}/>}></Route>
+                            <Route path="/edit-results/:id" element={<EditResults setNotifications={setNotifications}/>}></Route>
+                            <Route path="/users" element={<UserList />}></Route>
+                            <Route path="/" element={<Navigate to="/contests" />}></Route>
+                        </Routes>
+                    </div>
                 </div>
-            </div>
-            { notifications.length ? 
-                <div className="notifications">
-                {
-                    notifications.map((n, i) => {
-                        return (
-                            <div className="notification" key={i}>
-                                <ErrorIcon className="error-icon"></ErrorIcon>
-                                {n.message}
-                                <CancelIcon className="clear-icon" onClick={() => removeNotification(i)}></CancelIcon>
-                            </div>
-                        )
-                    })
-                } 
-                </div>
-                : <div></div>
-            }
+                { notifications.length ? 
+                    <div className="notifications">
+                    {
+                        notifications.map((n, i) => {
+                            return (
+                                <div className="notification" key={i}>
+                                    <ErrorIcon className="error-icon"></ErrorIcon>
+                                    {n.message}
+                                    <CancelIcon className="clear-icon" onClick={() => removeNotification(i)}></CancelIcon>
+                                </div>
+                            )
+                        })
+                    } 
+                    </div>
+                    : <div></div>
+                }
+            </ThemeProvider>
         </BrowserRouter>
     );
 }
