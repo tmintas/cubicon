@@ -25,8 +25,16 @@ const ContestList = () => {
 
     const navigate = useNavigate();
 
-    const onEditClick = (contestId: number) => {
-        navigate(`../edit-contest/${contestId}`);
+    const onEditContestClick = (event: any, contestId: number) => {
+        event.stopPropagation();
+
+        navigate(`./${contestId}/edit`);
+    }
+
+    const onContestItemClick = (event: any, contestId: number) => {
+        event.stopPropagation();
+        
+        navigate(`./${contestId}/results`);
     }
 
     const onDeleteClick = async (contestId: number) => {
@@ -105,13 +113,15 @@ const ContestList = () => {
         });
     }
 
-    const onEditContestResultsClick: (contestId: number) => void = (contestId: number) => {
-        navigate(`../edit-results/${contestId}`);
+    const onEditContestResultsClick = (event: any, contestId: number) => {
+        event.stopPropagation();
+
+        navigate(`./${contestId}/edit-results`);
     }
 
     const getContestItem = (c: Contest) => {
         return (
-            <div className="list-item" key={c.id}>
+            <div className="list-item" key={c.id} onClick={(e) => onContestItemClick(e, c.id) }>
                 <div className="actions-menu actions-menu-left">
                 </div>
                 <div className="contest-preview" key={c.name}>
@@ -130,8 +140,8 @@ const ContestList = () => {
                     {
                         state.showUpcoming &&
                         <>
-                            <BallotIcon className="action-icon" onClick={() => { onEditContestResultsClick(c.id); }}></BallotIcon>
-                            <EditIcon className="action-icon" onClick={() => { onEditClick(c.id); }}></EditIcon>
+                            <BallotIcon className="action-icon" onClick={(e) => { onEditContestResultsClick(e, c.id); }}></BallotIcon>
+                            <EditIcon className="action-icon" onClick={(e) => { onEditContestClick(e, c.id); }}></EditIcon>
                             <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
                         </>
                     }
@@ -158,7 +168,7 @@ const ContestList = () => {
             </div>
 
             <div className="actions-container">
-                <FormButton onClick={() => { navigate('/edit-contest/0')}} disabled={false} text="Создать контест"></FormButton>
+                <FormButton onClick={() => { navigate('./0/edit')}} disabled={false} text="Создать контест"></FormButton>
             </div>
         </>
     )

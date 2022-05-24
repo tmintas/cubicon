@@ -240,7 +240,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
     return (
         <>
             <div className="info-container">
-                {contestIdNum === 0 ? 'Создание нового контеста' : 'Редактирование контеста'}
+                {contestIdNum === 0 ? 'Создание нового контеста' : formState.name + ' - Редактирование контеста'}
             </div>
             <div inline-datepicker="true" data-date="02/25/2022"></div>
             <div className="create-contest-form">

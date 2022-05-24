@@ -1,0 +1,23 @@
+{
+    "editor.fontSize": 12,
+    "editor.tabSize": 4,
+    "restoreTerminals.terminals": [
+        {
+            "splitTerminals": [
+                {
+                    "name": "Client",
+                    "commands": [
+                        "cd ./client"
+                    ]
+                },
+                {
+                    "name": "Server",
+                    "commands": [
+                        "cd ./server"
+                    ]
+                }
+            ],
+        }
+    ],
+    "restoreTerminals.runOnStartup": true,
+}

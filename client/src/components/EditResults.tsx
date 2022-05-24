@@ -44,10 +44,16 @@ type ResulstFormState = {
     editingResult: ResultUIItem,
 }
 
+type ResultsComponentProps = ErrorHandlerProps & {
+    isEditingMode: boolean,
+}
+
 // TODO use react-hook-form for form handling
 // TODO add validation error messages
 // TODO add tooltips
-const EditResults = (props: ErrorHandlerProps) => {
+const EditResults = (props: ResultsComponentProps) => {
+    const { setNotifications, isEditingMode } = props;
+    
     const navigate = useNavigate();
     const { id: contestId } = useParams();
     const defaultEditingResult = {
@@ -135,7 +141,7 @@ const EditResults = (props: ErrorHandlerProps) => {
     // TODO add other types of notifications
     // combine methods from different components
     const addNotification = (notification: Notification) => {
-        props.setNotifications((notifications: Notification[]) => {
+        setNotifications((notifications: Notification[]) => {
             return [
                 ...notifications,
                 notification,
@@ -433,7 +439,30 @@ const EditResults = (props: ErrorHandlerProps) => {
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
         !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedById;
 
+    const roundHasResults = (roundId: number) => {
+        return state.contestResults.some(r => r.roundId === roundId);
+    }
+
     // TSX elements
+    const getActionIcons = (result: ResultUIItem) => { 
+        return (
+            <>
+                <td className='td-action'> 
+                <EditIcon 
+                    className={`icon ${result.isEditing && 'editing'}`} 
+                    onClick={() => { onEditResultClick(result); }}>
+                </EditIcon>
+            </td>
+            <td className='td-action'> 
+                <DeleteForeverIcon 
+                    className="icon" 
+                    onClick={() => { onDeleteResultClick(result); }}
+                ></ DeleteForeverIcon>
+            </td>
+            </>
+        );
+    };
+
     const inputRowCells = !editingResult ? <div>empty</div> :
         <>
             <td>
@@ -516,26 +545,22 @@ const EditResults = (props: ErrorHandlerProps) => {
             </td>
         </>
 
-    const roundHasResults = (roundId: number) => {
-        return state.contestResults.some(r => r.roundId === roundId);
-    }
-
     const roundTabs =
-        <div className='round-tabs'>
-            {
-                state.contest?.rounds.map(r => {
-                    return (
-                            <div 
-                                key={r.id}
-                                className={`tab ${r.id === state.selectedRoundId && 'active'}`} 
-                                onClick={() => onRoundSelect(r.id)}
-                            >
-                            {r.name}
-                            <ErrorIcon className='error-icon' style={{visibility: roundHasResults(r.id) ? 'hidden' : 'visible' }}></ErrorIcon>
-                        </div>
-                    )
-                })
-            }
+        <div className='round-tabs'>{
+            state.contest?.rounds.map(r => (
+                <div 
+                    key={r.id}
+                    className={`tab ${r.id === state.selectedRoundId && 'active'}`} 
+                    onClick={() => onRoundSelect(r.id)}
+                >
+                {r.name}
+                { 
+                    props.isEditingMode && 
+                    <ErrorIcon className='error-icon' style={{visibility: roundHasResults(r.id) ? 'hidden' : 'visible' }}>
+                    </ErrorIcon>
+                }
+                </div>)
+            )}
         </div>
 
     // TODO create fancy spinner
@@ -547,9 +572,8 @@ const EditResults = (props: ErrorHandlerProps) => {
     else return (
         <>
             <div className='info-container'>
-                {state.contest.name} - результаты
+                {state.contest.name} { props.isEditingMode ? ' - ввод результатов' : ' - результаты' }
             </div>
-
             {roundTabs}
 
             <div className='results-container'>
@@ -561,18 +585,17 @@ const EditResults = (props: ErrorHandlerProps) => {
                             <th style={{width: '120px'}}>Лучшая</th>
                             <th style={{width: '120px'}}>Среднее</th>
                             <th colSpan={5} style={{width: '370px'}}>Сборки</th>
-                            <th colSpan={2} style={{width: '100px'}}></th>
+                            { isEditingMode && <th colSpan={2} style={{width: '100px'}}></th>}
                         </tr>
                     </thead>
 
                     <tbody>
                         {selectedRoundResults.map((r, i) => {
                             return (
-                                // TODO use id
-                                <tr key={i}>
-                                    <td className='td-order'>{i+1}</td>
+                                <tr key={r.id}>
+                                    <td className='td-order'>{++i}</td>
                                     <td className='td-name'>
-                                        {allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? ''}</td>
+                                        { allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? '' }</td>
                                     <td className='td-res'>{r.best}</td>
                                     <td className='td-res'>{r.average}</td>
                                     <td className='td-res'>{r.attempt1}</td>
@@ -580,32 +603,29 @@ const EditResults = (props: ErrorHandlerProps) => {
                                     <td className='td-res'>{r.attempt3}</td>
                                     <td className='td-res'>{r.attempt4}</td>
                                     <td className='td-res'>{r.attempt5}</td>
-                                    <td className='td-action'> 
-                                        <EditIcon 
-                                            className={`icon ${r.isEditing && 'editing'}`} 
-                                            onClick={() => { onEditResultClick(r); }}>
-                                        </EditIcon>
-                                    </td>
-                                    <td className='td-action'> 
-                                        <DeleteForeverIcon 
-                                            className="icon" 
-                                            onClick={() => { onDeleteResultClick(r); }}
-                                        ></ DeleteForeverIcon>
-                                    </td>
+                                    { isEditingMode && getActionIcons(r) }
                                 </tr>
                             )
                         })}
-                        <tr></tr>
-                        <tr className='input-row'>
-                            <td></td>
-                            {inputRowCells}
-                        </tr>
+                        {isEditingMode && <>
+                            <tr></tr>
+                            <tr className='input-row'>
+                                <td></td>
+                                {inputRowCells}
+                            </tr>
+                        </>}
                     </tbody>
                 </table>
 
                 <div className="actions-container">
                     <FormButton onClick={() => { navigate('../contests')}} disabled={false} text="Назад к списку"></FormButton>
-                    <FormButton onClick={onSubmitClick} disabled={state.contest.rounds.some(r => !roundHasResults(r.id))} text="Сохранить результаты"></FormButton>
+                   {
+                        isEditingMode && 
+                        <FormButton 
+                            disabled={state.contest.rounds.some(r => !roundHasResults(r.id))} 
+                            text="Сохранить результаты"
+                            onClick={onSubmitClick}></FormButton>
+                    }
                 </div>
             </div>
         </>

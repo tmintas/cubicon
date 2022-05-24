@@ -37,8 +37,18 @@ const App = () => {
                     <div className="wrapper">
                         <Routes>
                             <Route path="/contests" element={<ContestsList />}></Route>
-                            <Route path="/edit-contest/:id" element={<EditContestForm setNotifications={setNotifications}/>}></Route>
-                            <Route path="/edit-results/:id" element={<EditResults setNotifications={setNotifications}/>}></Route>
+                            <Route path="/contests/:id/edit" element={<EditContestForm setNotifications={setNotifications}/>}></Route>
+                            <Route path="/contests/:id/edit-results" element={
+                                <EditResults 
+                                    setNotifications={setNotifications}
+                                    isEditingMode={true}/>}
+                            ></Route>
+                            <Route path="/contests/:id/results" element={
+                                <EditResults 
+                                    setNotifications={setNotifications}
+                                    isEditingMode={false}
+                                />}
+                            ></Route>
                             <Route path="/users" element={<UserList />}></Route>
                             <Route path="/" element={<Navigate to="/contests" />}></Route>
                         </Routes>

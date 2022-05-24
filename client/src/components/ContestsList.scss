@@ -34,14 +34,21 @@ h2 {
 }
 
 .list-item {
+    cursor: pointer;
     display: flex;
-    
+    background-color: $secondary;
+    border-radius: 8px;
+    border: 1px solid $secondary;
+
+    &:hover {
+        background-color: lighten($secondary, 3);
+    }
+
     &:not(:last-child) {
         margin-bottom: 15px;
     }
 
     .contest-preview {
-        background-color: $secondary;
         height: auto;
         font-size: 14px;
         flex-grow: 1;
@@ -65,17 +72,16 @@ h2 {
     
         .event-container {
             background-color: #BCB7B7;
-            border-radius: 8px;
             flex-basis: auto;
             color: black;
             font-weight: 500;
             padding: 2px 15px;
+            border-radius: 8px;
         }
     }
 
     .actions-menu {
         padding: 0 15px;
-        background-color: $secondary;
         display: flex;
         align-items: center;
         justify-content: space-around;
