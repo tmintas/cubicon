@@ -1,6 +1,7 @@
 import { Round } from "@prisma/client";
 import { prisma } from "..";
 
+// TODO handle exceptions, change return type to 500
 export const getAllContests = async (req: any, res: any) => {
     try {
         const contests = await prisma.contest.findMany({
@@ -27,6 +28,7 @@ export const createContest = async (req: any, res: any) => {
                 vkUrl: req.body.vkUrl,
                 city: req.body.city,
                 date,
+                isPublished: false,
                 organizedBy: { connect: { id: req.body.organizedById } },
                 rounds: { create: req.body.rounds },
             },
@@ -89,6 +91,8 @@ export const updateContest = async (req: any, res: any) => {
         var id = +req.params.id;
         var data = req.body;
 
+        console.log(data);
+        
         var updated = await prisma.contest.update({
             where: {
                 id
@@ -98,6 +102,7 @@ export const updateContest = async (req: any, res: any) => {
                 vkUrl: data.vkUrl,
                 city: data.city,
                 date: data.date,
+                isPublished: data.isPublished,
                 organizedBy: { connect: { id: data.organizedById } },
                 rounds: {
                     deleteMany: {},
@@ -125,3 +130,24 @@ export const updateContest = async (req: any, res: any) => {
         res.status(404).json({ message: error.message });
     }   
 };
+
+export const publishContest = async (req: any, res: any) => {
+    try {
+        const contestId = +req.params.id;
+        var updated = await prisma.contest.update({
+            where: {
+                id: contestId,
+            },
+            data: {
+                isPublished: true,
+            }
+        });
+
+        res.status(200).json(updated);
+    }
+    catch (error: any) {
+        console.log(error);
+        
+        res.status(404).json({ message: error.message });
+    }
+}

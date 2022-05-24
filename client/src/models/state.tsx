@@ -5,6 +5,7 @@ export type Contest = {
     date: Date,
     vkLink: string,
     location: string,
+    isPublished: boolean,
     organizedById: any,
     organizedBy: any,
     rounds: Round[],

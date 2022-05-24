@@ -6,11 +6,11 @@ import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
 import BallotIcon from '@mui/icons-material/Ballot';
 import FormButton from './shared/FormButton';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 type ContestsListState = {
     isLoaded: boolean,
     allContests: Contest[],
-    displayedContests: Contest[],
     showUpcoming: boolean,
 }
 
@@ -19,7 +19,6 @@ const ContestList = () => {
     const [ state, setState ] = useState<ContestsListState>({ 
         isLoaded: false,
         allContests: [], 
-        displayedContests: [], 
         showUpcoming: true 
     });
 
@@ -53,7 +52,6 @@ const ContestList = () => {
                 ...state,
                 isLoaded: true,
                 allContests: updatedItems,
-                displayedContests: filterContests(updatedItems, state.showUpcoming),
             };
         });
     }
@@ -73,23 +71,22 @@ const ContestList = () => {
                     ...state,
                     isLoaded: true,
                     allContests: contests,
-                    displayedContests: filterContests(contests, state.showUpcoming),
                 })
             });
     }, [])  
 
     // filters contests that should be displayed
-    const filterContests: (contests: Contest[], showUpcoming: boolean) => Contest[] = (contests: Contest[], showUpcoming: boolean) => {
+    const filterContests = (contests: Contest[], showUpcoming: boolean) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
         return contests.filter(c => {
-            return showUpcoming ? c.date >= today : c.date < today;
+            return showUpcoming ? c.date >= today && !c.isPublished : c.isPublished;
         });
     }
 
     // stringifies the date object into a human readable format
-    const getReadableDate: (date: Date) => string = (date: Date) => {
+    const getReadableDate = (date: Date) => {
         return `${ monthsAbbreviations[new Date(date).getMonth()]} ${date.getDate()}, ${date.getFullYear()  }`;
     } 
 
@@ -103,13 +100,44 @@ const ContestList = () => {
     }
 
     // toggles selected contest mode and updates the state
-    const toggleContestTab: (showUpcoming: boolean) => void = (showUpcoming: boolean) => {
+    const toggleContestTab = (showUpcoming: boolean) => {
         setState(state => {
             return {
                 ...state,
                 showUpcoming,
-                displayedContests: filterContests(state.allContests, showUpcoming),
             };
+        });
+    }
+
+    const publishContest = async (event: any, contestId: number) => {
+        event.stopPropagation();
+
+        const contest = state.allContests.find(c => c.id === contestId);
+        
+        if (!contest) {
+            throw new Error(`Контест с id = ${contestId} не найден.`);
+        }
+
+        const response = await fetch(`http://localhost:3000/contests/${contestId}/publish`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+        });
+
+        // TODO add error handling
+        if (!response.ok) {
+            throw new Error('Ошибка при сохранении контеста.')
+        }
+
+        setState(state => {
+            return {
+                ...state,
+                allContests: state.allContests.map(c => {
+                    if (c.id !== contestId) return c;
+
+                    c.isPublished = true;
+                    return c;
+                })
+            }
         });
     }
 
@@ -140,6 +168,7 @@ const ContestList = () => {
                     {
                         state.showUpcoming &&
                         <>
+                            <CampaignIcon className="action-icon" onClick={(e) => publishContest(e, c.id) } ></CampaignIcon>
                             <BallotIcon className="action-icon" onClick={(e) => { onEditContestResultsClick(e, c.id); }}></BallotIcon>
                             <EditIcon className="action-icon" onClick={(e) => { onEditContestClick(e, c.id); }}></EditIcon>
                             <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
@@ -150,6 +179,8 @@ const ContestList = () => {
         );
     }
 
+    const displayedContests = filterContests(state.allContests, state.showUpcoming);
+
     return (
         <>
             <div className="tabs">
@@ -159,11 +190,11 @@ const ContestList = () => {
 
             <div className="list-container">
                 {
-                    !state.displayedContests.length 
+                    !displayedContests.length 
                         ? <div style={{ 'padding': '20px' }}>
                             Нет {state.showUpcoming ? ' предстоящих' : 'прошедших'} контестов
                         </div>
-                        : state.displayedContests.map(c =>  getContestItem(c))
+                        : displayedContests.map(c =>  getContestItem(c))
                 }
             </div>
 

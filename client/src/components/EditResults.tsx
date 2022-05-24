@@ -564,10 +564,10 @@ const EditResults = (props: ResultsComponentProps) => {
         </div>
 
     // TODO create fancy spinner
-    if (!state.loaded) return <div>loading...</div>;
+    if (!state.loaded) return <div>Загрузка...</div>;
 
     // TODO create empty box
-    if (!state.contest) return <div>contet is empty...</div>;
+    if (!state.contest) return <div>Контест не найде, попробуйте попытку позже.</div>;
 
     else return (
         <>

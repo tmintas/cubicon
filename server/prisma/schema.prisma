@@ -27,6 +27,7 @@ model Contest {
     date          DateTime
     vkUrl         String?
     city          String?
+    isPublished   Boolean
     organizedById Int?
     organizedBy   User?    @relation(fields: [organizedById], references: [id])
     rounds        Round[]
