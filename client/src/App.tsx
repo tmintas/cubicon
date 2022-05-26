@@ -9,6 +9,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useState } from "react";
 import { Notification } from './models/state';
 import { createTheme, ThemeProvider } from "@mui/material";
+import UserProfilePage from "./components/UserProfilePage";
 
 const App = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -50,6 +51,7 @@ const App = () => {
                                 />}
                             ></Route>
                             <Route path="/users" element={<UserList />}></Route>
+                            <Route path="/users/:id" element={<UserProfilePage />}></Route>
                             <Route path="/" element={<Navigate to="/contests" />}></Route>
                         </Routes>
                     </div>

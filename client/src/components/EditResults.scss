@@ -72,6 +72,15 @@
 
             td.td-name {
                 padding-left: 10px;
+
+                p.user-name {
+                    &:hover {
+                        cursor: pointer;
+                        text-decoration: underline;
+                    }
+
+                    margin: 0;
+                }
             }
 
             &:nth-child(2n):not(.input-row) {

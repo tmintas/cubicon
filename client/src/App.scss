@@ -5,7 +5,7 @@ html, body, #root {
     margin: 0;
     height: 100%;
     font-family: 'Roboto', sans-serif;
-    color: $gray;
+    color: $light-gray;
 }
 
 #root {
@@ -14,7 +14,7 @@ html, body, #root {
 
 input {
     box-sizing: border-box;
-    color: $gray;
+    color: $light-gray;
     font-size: 15px;
     background-color: $secondary;
     border: none;
@@ -23,7 +23,7 @@ input {
     padding-left: 12px;
 
     &:hover:not(:disabled), &:focus:not(:disabled) {
-        border-bottom-color: white;
+        border-bottom-color: $light-gray;
         cursor: text;
     }
 
@@ -35,7 +35,7 @@ input {
 // date picker
 .MuiFormControl-root input {
     padding: 15px;
-    color: $gray;
+    color: $light-gray;
 }
 
 .nav-menu {
@@ -55,8 +55,8 @@ input {
         align-items: center;
 
         &.active {
-            color: white;
-            border-left: 1px solid white;
+            color: $light-gray;
+            border-left: 1px solid $light-gray;
         }
     }
 }
@@ -84,6 +84,14 @@ input {
     text-align: center;
     border-radius: 10px;
     font-size: 30px;
+}
+
+// TODO use this for all containers
+.container {
+    background-color: #394252;
+    height: auto;
+    text-align: center;
+    border-radius: 10px;
 }
 
 .notifications {

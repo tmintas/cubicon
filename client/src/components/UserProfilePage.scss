@@ -1,0 +1,128 @@
+@import '../styles//colors.scss';
+@import '../styles/mixins.scss';
+
+.user-profile-page {
+    h2 {
+        margin: 0;
+        font-size: 30px;
+    }
+
+    .main-info {
+        display: flex;
+        justify-content: space-between;
+        padding: 25px 0;
+    
+        h2 {
+            border-right: .5px solid $gray;
+            flex-basis: 40%;
+    
+            @include centered-content();
+        }
+    
+        .info-row {
+            height: 70px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-evenly;
+    
+            .info-item {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: flex-start;
+    
+                p {
+                    margin: 0;
+                    line-height: 40px;
+                }
+        
+                h3, .info-text{
+                    margin: 0;
+                    font-size: 15px;
+                }
+        
+                .info-number {
+                    line-height: 32px;
+                    font-size: 40px;
+                }
+            }
+        }
+    }
+
+    .records-info {
+        padding: 30px;
+        margin-top: 30px;
+
+        h3 {
+            font-size: 18px;
+            width: 100%;
+            margin: 0 auto 20px;
+        }
+
+        .records {
+            display: flex;
+            flex-wrap: wrap;
+
+            .header {
+                height: 45px;
+                border-bottom: 1px solid $gray;
+            }
+
+            > * {
+                flex-basis: 50%;
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: center;
+
+                &.records-row {
+                    height: 40px;
+
+                    // 1, 4, 5, 7, 8, ...
+                    &:nth-child(4n+3), &:nth-child(4n+6) {
+                        background-color: darken($secondary, 3);
+                    }
+                }
+
+                > * {
+                    &.event {
+                        flex: 0 1 120px;
+                    }
+
+                    flex-grow: 1;
+                    flex-shrink: 1;
+                }
+            }
+        }
+    }
+
+    .results-info {
+        padding: 30px;
+        margin-top: 30px;
+
+        h3 {
+            font-size: 18px;
+            width: 100%;
+            margin: 0 auto 20px;
+        }
+
+        table.results-table {
+            width: 100%;
+            overflow-x: auto;
+            border-collapse: collapse;
+
+            thead tr {
+                height: 45px;
+                border-bottom: .5px solid #7a7c80;
+            }
+
+            tr {
+                height: 38px;
+
+                &:nth-child(2n) {
+                    background-color: darken($secondary, 3);
+                }
+            }
+        }
+    }
+}
+

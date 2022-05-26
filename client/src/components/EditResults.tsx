@@ -13,6 +13,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import { Notification } from '../models/state';
 import UsersAutocomplete from './shared/UsersAutocomplete';
 
+// TODO use this model for input row only. The values should not be null for the results
 type ResultUIItem = {
     id: number | null,
     attempt1: string | null,
@@ -336,6 +337,12 @@ const EditResults = (props: ResultsComponentProps) => {
         setSelectedUserOption(userOption);
     }
 
+    const onUserClick = (userId: number | null) => {
+        if (!userId) return;
+
+        navigate(`../users/${userId}`);
+    }
+
     const onSubmitClick = async () => {
         const results = state.contestResults.map(r => {
             let result = {
@@ -594,8 +601,11 @@ const EditResults = (props: ResultsComponentProps) => {
                             return (
                                 <tr key={r.id}>
                                     <td className='td-order'>{++i}</td>
-                                    <td className='td-name'>
-                                        { allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? '' }</td>
+                                    <td className='td-name' onClick={() => onUserClick(r.performedById)}>
+                                        <p className='user-name'>
+                                            { allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? '' }
+                                        </p>
+                                    </td>
                                     <td className='td-res'>{r.best}</td>
                                     <td className='td-res'>{r.average}</td>
                                     <td className='td-res'>{r.attempt1}</td>
