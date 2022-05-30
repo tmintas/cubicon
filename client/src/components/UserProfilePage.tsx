@@ -1,14 +1,69 @@
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Result, User } from "../models/state";
+import { toDelimitedString } from "../services/results-service";
 import './UserProfilePage.scss';
 
+type UserProfilePageState = {
+    user: User | null,
+    contestsCount: number,
+    solvesCount: number,
+    allResults: ProfileResult[],
+}
+
+type ProfileResult = Result & {
+    contestId: number,
+    contestName: string,
+    roundName: string,
+};
+
+// TODO add records tab
+// TODO add place in round value
 const UserProfilePage = () => {
+    const navigate = useNavigate();
     const { id: userId } = useParams();
+    const [ state, setState ] = useState<UserProfilePageState>({
+        user: null,
+        contestsCount: 0,
+        solvesCount: 0,
+        allResults: [],
+    });
+
+    const baseUrl = 'http://localhost:3000/users';
+
+    useEffect(() => {
+        const getUser = fetch(`${baseUrl}/${userId}/profile`).then(res => res.json());
+        const getContestsCount = fetch(`${baseUrl}/${userId}/contests-count`).then(res => res.json());
+        const getAllResults = fetch(`${baseUrl}/${userId}/all-results`).then(res => res.json());
+
+        Promise.all([  getUser, getContestsCount, getAllResults ])
+            .then((res: [ User, number, { allResults: any[], totalSolvesCount: number }]) => {
+                const user = res[0];
+                const contestsCount = res[1];
+                const allResultsInfo = res[2];
+
+                setState(() => {
+                    return {
+                        user,
+                        contestsCount,
+                        solvesCount: allResultsInfo.totalSolvesCount,
+                        allResults: allResultsInfo.allResults,
+                    };
+                })
+            });
+    }, []);
+
+    const onContestClick = (contestId: number) => {
+        navigate(`../contests/${contestId}/results`);
+    }
+
+    if (!state.user) return <div>Пользователь не найден!</div>;
 
     return (
         <div className="user-profile-page">
             <div className="container main-info">
                 <h2>
-                    Иван Петров
+                    { `${state.user.firstName} ${state.user.lastName}`}
                 </h2>
 
                 <div className="info-row">
@@ -23,51 +78,14 @@ const UserProfilePage = () => {
                         <h3>
                             Посетил встреч
                         </h3>
-                        <div className="info-number">12</div>
+                        <div className="info-number">{state.contestsCount}</div>
                     </div>
 
                     <div className="info-item">
                         <h3>
                             Всего сборок
                         </h3>
-                        <div className="info-number">255</div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="container records-info">
-                <h3>Личные рекорды</h3>
-
-                <div className="records">
-                    <div className="header">
-                        <p className="event"></p>
-                        <p>Лучшая</p>
-                        <p>Среднее</p>
-                    </div>
-                    <div className="header">
-                        <p className="event"></p>
-                        <p>Лучшая</p>
-                        <p>Среднее</p>
-                    </div>
-                    <div className="records-row">
-                        <p className="event">3x3</p>
-                        <p>9.43</p>
-                        <p>11.15</p>
-                    </div>
-                    <div className="records-row">
-                        <p className="event">3x3</p>
-                        <p>9.43</p>
-                        <p>11.15</p>
-                    </div>
-                    <div className="records-row">
-                        <p className="event">3x3</p>
-                        <p>9.43</p>
-                        <p>11.15</p>
-                    </div>
-                    <div className="records-row">
-                        <p className="event">3x3</p>
-                        <p>9.43</p>
-                        <p>11.15</p>
+                        <div className="info-number">{state.solvesCount}</div>
                     </div>
                 </div>
             </div>
@@ -78,9 +96,8 @@ const UserProfilePage = () => {
                 <table className="results-table">
                     <thead>
                         <tr>
-                            <th>Встреча</th>
-                            <th>Раунд</th>
-                            <th>Место</th>
+                            <th className="th-contest">Встреча</th>
+                            <th className="th-round">Раунд</th>
                             <th>Лучшая</th>
                             <th>Средняя</th>
                             <th colSpan={5}>Попытки</th>
@@ -88,30 +105,21 @@ const UserProfilePage = () => {
                     </thead>
 
                     <tbody>
-                        <tr>
-                            <td>Korston #1</td>
-                            <td>Первый раунд</td>
-                            <td>1</td>
-                            <td>9.88</td>
-                            <td>12.23</td>
-                            <td>11.11</td>
-                            <td>22.22</td>
-                            <td>33.33</td>
-                            <td>44.44</td>
-                            <td>55.55</td>
-                        </tr>
-                        <tr>
-                            <td>Korston #2</td>
-                            <td>Первый раунд</td>
-                            <td>1</td>
-                            <td>9.88</td>
-                            <td>12.23</td>
-                            <td>11.11</td>
-                            <td>22.22</td>
-                            <td>33.33</td>
-                            <td>44.44</td>
-                            <td>55.55</td>
-                        </tr>
+                        {state.allResults.map(r => {
+                            return (
+                                <tr key={r.id}>
+                                    <td className="td-contest" onClick={() => onContestClick(r.contestId)}>{r.contestName}</td>
+                                    <td className="td-round">{r.roundName}</td>
+                                    <td>{toDelimitedString(r.best)}</td>
+                                    <td>{toDelimitedString(r.average)}</td>
+                                    <td>{toDelimitedString(r.attempt1)}</td>
+                                    <td>{toDelimitedString(r.attempt2)}</td>
+                                    <td>{toDelimitedString(r.attempt3)}</td>
+                                    <td>{toDelimitedString(r.attempt4)}</td>
+                                    <td>{toDelimitedString(r.attempt5)}</td>
+                                </tr>
+                            )
+                        })}
                     </tbody>
                 </table>
             </div>

@@ -12,6 +12,7 @@ import { DNF, DNS, DNF_DISPLAY_VALUE, DNS_DISPLAY_VALUE } from '../constants';
 import ErrorIcon from '@mui/icons-material/Error';
 import { Notification } from '../models/state';
 import UsersAutocomplete from './shared/UsersAutocomplete';
+import { toDelimitedString, getBestAndAverage, toMilliseconds } from '../services/results-service';
 
 // TODO use this model for input row only. The values should not be null for the results
 type ResultUIItem = {
@@ -149,65 +150,17 @@ const EditResults = (props: ResultsComponentProps) => {
             ]
         });
     }
-
-    // transfors the input attempt in milliseconds to a readable format 'MM:SS.ms'
-    const toDelimitedString = (resultMs: number) => {
-        if (resultMs === DNF) return DNF_DISPLAY_VALUE;
-        if (resultMs === DNS) return DNS_DISPLAY_VALUE;
-
-        const minutes = Math.floor(resultMs / 6000);
-        const seconds = Math.floor((resultMs - 6000 * minutes) / 100);
-        const milliseconds = resultMs - 6000 * minutes - seconds * 100;
-
-        return `${minutes > 0 ? minutes + ':' : ''}${seconds}.${milliseconds < 10 ? '0' + milliseconds : milliseconds}`;
-    }
-
-    // transorms the input attempt string to milliseconds
-    const toMilliseconds = (resultRaw: string | null) => {
-        if (!resultRaw) return 0;
-
-        if (resultRaw === DNF_DISPLAY_VALUE) return DNF;
-        if (resultRaw === DNS_DISPLAY_VALUE) return DNS;
-
-        const milliseconds: number = +resultRaw.split('.')[1];
-
-        const minutesAndSeconds = resultRaw.split('.')[0];
-        let seconds: number;
-        let minutes = 0;
-
-        if (minutesAndSeconds.indexOf(':') === -1) {
-            seconds = +minutesAndSeconds;
-        } else {
-            minutes = +minutesAndSeconds.split(':')[0];
-            seconds = +minutesAndSeconds.split(':')[1];
-        }
-
-        return minutes * 6000 + seconds * 100 + milliseconds;
-    }
-
-    const getBestAndAverage: (result: ResultUIItem) => [number, number] = (result: ResultUIItem) => {
-        const attempts = [ result.attempt1, result.attempt2, result.attempt3, result.attempt4, result.attempt5 ].map(r => toMilliseconds(r));
-
-        const best = attempts.every(a => a === DNF || a === DNS) 
-            ? attempts[0]
-            : attempts.filter(a => a !== DNF && a !== DNS).sort((a, b) => a - b)[0];
-
-        // if all attempts are DNF/DNS or there are 2 DNF's, don't calculate average
-        if (best < 0 || attempts.filter(a => a === DNF || a === DNS).length > 1) 
-            return [best, DNF];
-
-        const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(best));
-
-        const dnfOrDns =  withoutBest.find(a => a === DNF || a === DNS);
-        let worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
-
-        const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
-
-        const avg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
-        
-        return [best, avg];
-    }
     
+    const getAttemptsMs = (result: ResultUIItem) => {
+        return [ 
+            toMilliseconds(result.attempt1), 
+            toMilliseconds(result.attempt2), 
+            toMilliseconds(result.attempt3), 
+            toMilliseconds(result.attempt4), 
+            toMilliseconds(result.attempt5)
+        ];
+    }
+
     // event handlers
     const onRoundSelect = (roundId: number) => {
         onClearResultClick();
@@ -223,8 +176,16 @@ const EditResults = (props: ResultsComponentProps) => {
     const onAddResultClick = () => {
         let newResult: ResultUIItem = { 
             ...editingResult, 
-            best: toDelimitedString(getBestAndAverage(editingResult)[0]),
-            average: toDelimitedString(getBestAndAverage(editingResult)[1]),
+            best: toDelimitedString(
+                getBestAndAverage(
+                    getAttemptsMs(editingResult)
+                )[0]
+            ),
+            average: toDelimitedString(
+                getBestAndAverage(
+                    getAttemptsMs(editingResult)
+                )[1]
+            ),
             roundId: state.selectedRoundId, 
             isAdded: true 
         };
@@ -261,10 +222,12 @@ const EditResults = (props: ResultsComponentProps) => {
                 editingResult: defaultEditingResult,
                 contestResults: [...state.contestResults.map(r => {
                     if (r.isEditing) {
+                        const attemptsMs = getAttemptsMs(editingResult);
+
                         const updatedItem: ResultUIItem = {
                             ...editingResult,
-                            best: toDelimitedString(getBestAndAverage(editingResult)[0]),
-                            average: toDelimitedString(getBestAndAverage(editingResult)[1]),
+                            best: toDelimitedString(getBestAndAverage(attemptsMs)[0]),
+                            average: toDelimitedString(getBestAndAverage(attemptsMs)[1]),
                         };
 
                         return updatedItem;
@@ -345,16 +308,18 @@ const EditResults = (props: ResultsComponentProps) => {
 
     const onSubmitClick = async () => {
         const results = state.contestResults.map(r => {
+            const attemptsMs: number[] = getAttemptsMs(r);
+
             let result = {
                 id: r.id,
                 roundId: r.roundId,
-                attempt1: toMilliseconds(r.attempt1),
-                attempt2: toMilliseconds(r.attempt2),
-                attempt3: toMilliseconds(r.attempt3),
-                attempt4: toMilliseconds(r.attempt4),
-                attempt5: toMilliseconds(r.attempt5),
-                best: getBestAndAverage(r)[0],
-                average: getBestAndAverage(r)[1],
+                attempt1: attemptsMs[0],
+                attempt2: attemptsMs[1],
+                attempt3: attemptsMs[2],
+                attempt4: attemptsMs[3],
+                attempt5: attemptsMs[4],
+                best: getBestAndAverage(attemptsMs)[0],
+                average: getBestAndAverage(attemptsMs)[1],
                 performedById: r.performedById,
             };
 
