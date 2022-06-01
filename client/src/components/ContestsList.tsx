@@ -1,10 +1,9 @@
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Contest } from "../models/state";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Contest, ContestStatus } from "../models/state";
 import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
-import BallotIcon from '@mui/icons-material/Ballot';
 import FormButton from './shared/FormButton';
 import CampaignIcon from '@mui/icons-material/Campaign';
 
@@ -16,24 +15,33 @@ type ContestsListState = {
 
 const ContestList = () => {
     const monthsAbbreviations = [ 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек' ];
+    
+    const navigate = useNavigate();
+    const [ params ] = useSearchParams();
+    const isAdmin: boolean = params.get('isAdmin') === 'true';
+
+    const showUpcoming: boolean = params.get('showUpcoming') === 'true';
     const [ state, setState ] = useState<ContestsListState>({ 
         isLoaded: false,
-        allContests: [], 
-        showUpcoming: true 
+        allContests: [],
+        showUpcoming,
     });
-
-    const navigate = useNavigate();
-
+    
     const onEditContestClick = (event: any, contestId: number) => {
         event.stopPropagation();
 
         navigate(`./${contestId}/edit`);
     }
 
-    const onContestItemClick = (event: any, contestId: number) => {
+    const onContestItemClick = (event: any, contest: Contest) => {
         event.stopPropagation();
         
-        navigate(`./${contestId}/results`);
+        // TODO refactor navigation - move flags to the redux state
+        if (!isAdmin || contest.status === ContestStatus.PUBLISHED) {
+            navigate(`./${contest.id}/results?isAdmin=${isAdmin ? 'true' : 'false'}&showUpcoming=${showUpcoming ? 'true' : 'false'}`);
+        } else {
+            navigate(`./${contest.id}/edit-results?isAdmin=${isAdmin ? 'true' : 'false'}&showUpcoming=${showUpcoming ? 'true' : 'false'}`);
+        }
     }
 
     const onDeleteClick = async (contestId: number) => {
@@ -75,16 +83,6 @@ const ContestList = () => {
             });
     }, [])  
 
-    // filters contests that should be displayed
-    const filterContests = (contests: Contest[], showUpcoming: boolean) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        return contests.filter(c => {
-            return showUpcoming ? c.date >= today && !c.isPublished : c.isPublished;
-        });
-    }
-
     // stringifies the date object into a human readable format
     const getReadableDate = (date: Date) => {
         return `${ monthsAbbreviations[new Date(date).getMonth()]} ${date.getDate()}, ${date.getFullYear()  }`;
@@ -99,8 +97,12 @@ const ContestList = () => {
         );
     }
 
-    // toggles selected contest mode and updates the state
     const toggleContestTab = (showUpcoming: boolean) => {
+        // TODO ad helper methods to construct query params from an object
+        navigate({
+            search: `?showUpcoming=${showUpcoming}${isAdmin ? '&isAdmin=true' : ''}`
+        });
+
         setState(state => {
             return {
                 ...state,
@@ -134,30 +136,55 @@ const ContestList = () => {
                 allContests: state.allContests.map(c => {
                     if (c.id !== contestId) return c;
 
-                    c.isPublished = true;
+                    c.status = ContestStatus.PUBLISHED;
                     return c;
                 })
             }
         });
     }
 
-    const onEditContestResultsClick = (event: any, contestId: number) => {
-        event.stopPropagation();
+    const getActions = (c: Contest) => {
+        if (c.status === ContestStatus.PUBLISHED || !isAdmin) return null;
 
-        navigate(`./${contestId}/edit-results`);
+        return (
+            <>
+                <button className='action-button' disabled={c.status === ContestStatus.NEW} onClick={(e) => publishContest(e, c.id) }>  
+                    <CampaignIcon 
+                        className="action-icon" 
+                    >
+                    </CampaignIcon>
+                </button>
+
+                <button className='action-button'>
+                    <EditIcon className="action-icon" onClick={(e) => { onEditContestClick(e, c.id); }}></EditIcon>
+                </button>
+
+                <button className='action-button'>
+                    <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
+                </button>
+            </>
+        );
+    }
+
+    const getMainInfo = (c: Contest) => {
+        return (
+            <>
+                <p>{c.name}</p>
+                <p>{getReadableDate(new Date(c.date))}</p>
+                {c.city ? <p>{c.city}</p> : null}
+                {c.organizedBy ? <p>{c.organizedBy.firstName + ' ' + c.organizedBy.lastName}</p> : null}
+            </>
+        );
     }
 
     const getContestItem = (c: Contest) => {
         return (
-            <div className="list-item" key={c.id} onClick={(e) => onContestItemClick(e, c.id) }>
+            <div className="list-item" key={c.id} onClick={(e) => onContestItemClick(e, c) }>
                 <div className="actions-menu actions-menu-left">
                 </div>
                 <div className="contest-preview" key={c.name}>
                     <div className="main-info">
-                        <p>{c.name}</p>
-                        <p>{getReadableDate(new Date(c.date))}</p>
-                        {c.city ? <p>{c.city}</p> : null}
-                        {c.organizedBy ? <p>{c.organizedBy.firstName + ' ' + c.organizedBy.lastName}</p> : null}
+                        {getMainInfo(c)}
                     </div>
                     <hr />
                     <div className="additional-info">
@@ -165,21 +192,17 @@ const ContestList = () => {
                     </div>
                 </div>
                 <div className="actions-menu actions-menu-right">
-                    {
-                        state.showUpcoming &&
-                        <>
-                            <CampaignIcon className="action-icon" onClick={(e) => publishContest(e, c.id) } ></CampaignIcon>
-                            <BallotIcon className="action-icon" onClick={(e) => { onEditContestResultsClick(e, c.id); }}></BallotIcon>
-                            <EditIcon className="action-icon" onClick={(e) => { onEditContestClick(e, c.id); }}></EditIcon>
-                            <DeleteForeverIcon className="action-icon" onClick={() => { onDeleteClick(c.id); }}></ DeleteForeverIcon>
-                        </>
-                    }
+                    { getActions(c) }
                 </div>
             </div>
         );
     }
 
-    const displayedContests = filterContests(state.allContests, state.showUpcoming);
+    const validStatuses = state.showUpcoming 
+        ? [ContestStatus.NEW, ContestStatus.EDITING_RESULTS] 
+        : [ContestStatus.PUBLISHED];
+
+    const displayedContests = state.allContests.filter(c => validStatuses.some(s => c.status === s));
 
     return (
         <>
@@ -198,9 +221,12 @@ const ContestList = () => {
                 }
             </div>
 
-            <div className="actions-container">
-                <FormButton onClick={() => { navigate('./0/edit')}} disabled={false} text="Создать контест"></FormButton>
-            </div>
+            {
+                isAdmin &&
+                <div className="actions-container">
+                    <FormButton onClick={() => { navigate('./0/edit')}} disabled={false} text="Создать контест"></FormButton>
+                </div>
+            }
         </>
     )
 }

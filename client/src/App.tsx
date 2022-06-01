@@ -32,7 +32,7 @@ const App = () => {
         <BrowserRouter>
             <ThemeProvider theme={darkTheme}>
                 <nav className="nav-menu">
-                    <NavLink to="/contests" className={({ isActive }) =>(isActive ? " active" : "")}>КОНТЕСТЫ</NavLink>
+                    <NavLink to="/contests?showUpcoming=true" className={({ isActive }) =>(isActive ? " active" : "")}>КОНТЕСТЫ</NavLink>
                 </nav>
                 <div className="main-container">
                     <div className="wrapper">
@@ -47,12 +47,11 @@ const App = () => {
                             <Route path="/contests/:id/results" element={
                                 <EditResults 
                                     setNotifications={setNotifications}
-                                    isEditingMode={false}
-                                />}
+                                    isEditingMode={false}/>}
                             ></Route>
                             <Route path="/users" element={<UserList />}></Route>
                             <Route path="/users/:id" element={<UserProfilePage />}></Route>
-                            <Route path="/" element={<Navigate to="/contests" />}></Route>
+                            <Route path="/" element={<Navigate to="/contests?showUpcoming=true" />}></Route>
                         </Routes>
                     </div>
                 </div>

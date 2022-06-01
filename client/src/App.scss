@@ -57,6 +57,7 @@ input {
         &.active {
             color: $light-gray;
             border-left: 1px solid $light-gray;
+            pointer-events: none;
         }
     }
 }

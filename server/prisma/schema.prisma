@@ -22,15 +22,21 @@ model User {
 }
 
 model Contest {
-    id            Int      @id @default(autoincrement())
-    name          String   @unique
+    id            Int           @id @default(autoincrement())
+    name          String        @unique
     date          DateTime
     vkUrl         String?
     city          String?
-    isPublished   Boolean
+    status        ContestStatus @default(NEW)
     organizedById Int?
-    organizedBy   User?    @relation(fields: [organizedById], references: [id])
+    organizedBy   User?         @relation(fields: [organizedById], references: [id])
     rounds        Round[]
+}
+
+enum ContestStatus {
+    NEW
+    EDITING_RESULTS
+    PUBLISHED
 }
 
 model Round {
@@ -39,10 +45,10 @@ model Round {
     contestId Int
     contest   Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
     results   Result[]
-    type      RoundType @default(AVERAGE_OF_5)
+    format    RoundFormat @default(AVERAGE_OF_5)
 }
 
-enum RoundType {
+enum RoundFormat {
     AVERAGE_OF_5
     MEAN_OF_3
 }

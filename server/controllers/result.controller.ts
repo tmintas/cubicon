@@ -1,4 +1,4 @@
-import { Result } from "@prisma/client";
+import { Contest, ContestStatus, Result } from "@prisma/client";
 import { prisma } from "..";
 
 const DNF = -1;
@@ -57,8 +57,8 @@ export const updateResults = async (req: any, res: any) => {
             }
 
             const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(calculatedBest));
-            const dnfOrDns =  withoutBest.find(a => a === DNF || a === DNS);
-            const worst = dnfOrDns ? dnfOrDns : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+            const firstDNForDNS = withoutBest.find(a => a === DNF || a === DNS);
+            const worst = firstDNForDNS ? firstDNForDNS : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
             const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
     
             const calculatedAvg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
@@ -70,6 +70,34 @@ export const updateResults = async (req: any, res: any) => {
             }
         }
 
+        const contest = await prisma.contest.findFirst({
+            where: {
+                id: contestId,
+            }
+        });
+
+        if (contest === null) {
+            res.status(404).json({ message: `contest with id ${contestId} was not found!` });
+
+            return;
+        }
+
+        if (contest.status === ContestStatus.PUBLISHED) {
+            res.status(400).json({ message: `you cannot edit a published contest!` });
+
+            return;
+        }
+
+        await prisma.contest.update({
+            where: {
+                id: contestId,
+            },
+            data: {
+                status: ContestStatus.EDITING_RESULTS,
+            },
+        })
+
+        // delete previous values - new ones will be populated from the form value
         await prisma.result.deleteMany({
             where: {
                 roundId: {

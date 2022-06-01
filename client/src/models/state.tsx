@@ -5,16 +5,22 @@ export type Contest = {
     date: Date,
     vkLink: string,
     location: string,
-    isPublished: boolean,
+    status: ContestStatus,
     organizedById: any,
     organizedBy: any,
     rounds: Round[],
 }
 
+export enum ContestStatus {
+    NEW = 'NEW',
+    EDITING_RESULTS = 'EDITING_RESULTS',
+    PUBLISHED = 'PUBLISHED',
+}
+
 export type Round = {
     id: number,
     name: string,
-    type: RoundType,
+    format: RoundFormat,
     results: Result[],
 }
 
@@ -31,7 +37,7 @@ export type Result = {
     roundId: number,
 }
 
-export enum RoundType {
+export enum RoundFormat {
     AVERAGE_OF_5 = 'AVERAGE_OF_5',
     MEAN_OF_3 = 'MEAN_OF_3',
 }

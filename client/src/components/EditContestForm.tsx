@@ -4,14 +4,14 @@ import "./EditContestForm.scss";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { ErrorHandlerProps, RoundType, Notification, User, UserOption, ADD_NEW_USER_OPTION_VALUE } from "../models/state";
+import { ErrorHandlerProps, Notification, User, UserOption, ADD_NEW_USER_OPTION_VALUE, RoundFormat } from "../models/state";
 import { useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
 import UsersAutocomplete from "./shared/UsersAutocomplete";
 
 type RoundItem = {
     name: string,
-    type: RoundType,
+    format: RoundFormat,
 }
 
 type ContestFormState = {
@@ -34,9 +34,9 @@ const EditContestForm = (props: ErrorHandlerProps) => {
     const contestIdNum =  Number(contestId);
 
     const availableRounds: RoundItem[] = [
-        { name: '3x3 финал', type: RoundType.AVERAGE_OF_5 },
-        { name: '3x3 полуфинал', type: RoundType.AVERAGE_OF_5  },
-        { name: '3x3 первый раунд', type: RoundType.AVERAGE_OF_5  },
+        { name: '3x3 финал', format: RoundFormat.AVERAGE_OF_5 },
+        { name: '3x3 полуфинал', format: RoundFormat.AVERAGE_OF_5  },
+        { name: '3x3 первый раунд', format: RoundFormat.AVERAGE_OF_5  },
     ];
 
     const [ formState, setFormState ] = useState<ContestFormState>({
@@ -157,7 +157,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
             addNotification({ message: 'Произошла ошибка при сохранении контеста. Повторите попытку позже.' });
         };
 
-        navigate('../contests');
+        navigate('../contests?isAdmin=true');
     }
 
     const addNewRound = () => {
@@ -180,13 +180,13 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         });
     }
 
-    const setRoundType = (round: RoundItem, roundType: RoundType) => {
+    const setRoundType = (round: RoundItem, roundFormat: RoundFormat) => {
         setFormState(v => {
             return {
                 ...v,
                 rounds: v.rounds.map(r => {
                     if (r.name === round.name) {
-                        r.type = roundType;
+                        r.format = roundFormat;
                     }
 
                     return r;
@@ -374,7 +374,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                 </table>
 
                 <div className="actions-container">
-                    <FormButton onClick={() => { navigate('../contests'); }} disabled={false} text="Назад к списку"></FormButton>
+                    <FormButton onClick={() => { navigate('../contests?isAdmin=true&showUpcoming=true'); }} disabled={false} text="Назад к списку"></FormButton>
                     <FormButton onClick={async () => { await handleSubmit(); }} disabled={!isFormValid()} text="Сохранить"></FormButton>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import { Round } from "@prisma/client";
+import { ContestStatus, Round } from "@prisma/client";
 import { prisma } from "..";
 
 // TODO handle exceptions, change return type to 500
@@ -28,7 +28,6 @@ export const createContest = async (req: any, res: any) => {
                 vkUrl: req.body.vkUrl,
                 city: req.body.city,
                 date,
-                isPublished: false,
                 organizedBy: { connect: { id: req.body.organizedById } },
                 rounds: { create: req.body.rounds },
             },
@@ -91,8 +90,6 @@ export const updateContest = async (req: any, res: any) => {
         var id = +req.params.id;
         var data = req.body;
 
-        console.log(data);
-        
         var updated = await prisma.contest.update({
             where: {
                 id
@@ -102,7 +99,6 @@ export const updateContest = async (req: any, res: any) => {
                 vkUrl: data.vkUrl,
                 city: data.city,
                 date: data.date,
-                isPublished: data.isPublished,
                 organizedBy: { connect: { id: data.organizedById } },
                 rounds: {
                     deleteMany: {},
@@ -110,7 +106,7 @@ export const updateContest = async (req: any, res: any) => {
                         data: data.rounds.map((r: Round) => {
                             return {
                                 name: r.name,
-                                type: r.type,
+                                format: r.format,
                             }
                         }),
                     },
@@ -139,7 +135,7 @@ export const publishContest = async (req: any, res: any) => {
                 id: contestId,
             },
             data: {
-                isPublished: true,
+                status: ContestStatus.PUBLISHED,
             }
         });
 

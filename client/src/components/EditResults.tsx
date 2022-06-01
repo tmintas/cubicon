@@ -3,7 +3,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ADD_NEW_USER_OPTION_VALUE, Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -58,6 +58,11 @@ const EditResults = (props: ResultsComponentProps) => {
     
     const navigate = useNavigate();
     const { id: contestId } = useParams();
+
+    const [ params ] = useSearchParams();
+    const isAdmin: boolean = params.get('isAdmin') === 'true';
+    const showUpcoming: boolean = params.get('showUpcoming') === 'true';
+
     const defaultEditingResult = {
         id: null,
         performedById: null,
@@ -336,7 +341,15 @@ const EditResults = (props: ResultsComponentProps) => {
             addNotification({ message: 'Произошла ошибка при сохранении результато. Повторите попытку позже.' });
         }
 
-        navigate('../contests');
+        goToContestsList();
+    }
+
+    const onGoBackClick = () => {
+        goToContestsList();
+    }
+
+    const goToContestsList = () => {
+        navigate(`../contests?showUpcoming=${showUpcoming ? 'true': 'false'}&isAdmin=${isAdmin ? 'true' : 'false'}`);
     }
 
     // UI variables
@@ -593,7 +606,7 @@ const EditResults = (props: ResultsComponentProps) => {
                 </table>
 
                 <div className="actions-container">
-                    <FormButton onClick={() => { navigate('../contests')}} disabled={false} text="Назад к списку"></FormButton>
+                    <FormButton onClick={onGoBackClick} disabled={false} text="Назад к списку"></FormButton>
                    {
                         isEditingMode && 
                         <FormButton 

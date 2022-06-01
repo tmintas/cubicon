@@ -4,6 +4,20 @@ h2 {
     margin: 0 20px 25px;
 }
 
+.action-button {
+    background: none;
+    border: none;
+    margin: 0 1px;
+    padding: 4px;
+    border-radius: 8px;
+    height: 32px;
+
+    &:hover:not(:disabled) {
+        background-color: darken($secondary, 6%) !important;
+        cursor: pointer;
+    }
+}
+
 .tabs {
     display: flex;
     align-items: center;
@@ -86,16 +100,13 @@ h2 {
         align-items: center;
         justify-content: space-around;
 
-        .action-icon {
-            color: $light-gray;
-            height: 22px;
-            width: 22px;
-            border-radius: 8px;
-            padding: 3px 5px;
+        button {
+            .action-icon {
+                color: $light-gray;
+            }
 
-            &:hover {
-                background-color: darken($secondary, 6%);
-                cursor: pointer;
+            &:disabled .action-icon {
+                color: $dark-gray;
             }
         }
     }
