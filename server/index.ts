@@ -2,12 +2,12 @@ import express, { Express } from 'express';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import users from './routes/user';
 import contests from './routes/contest';
 import rounds from './routes/round';
 import results from './routes/result';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
+import userRoutes from './routes/user.routes';
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cors())
 
-app.use('/users', users);
+app.use('/users', userRoutes);
 app.use('/contests', contests);
 app.use('/rounds', rounds);
 app.use('/results', results);

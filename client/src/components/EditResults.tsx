@@ -14,6 +14,9 @@ import { Notification } from '../models/state';
 import UsersAutocomplete from './shared/UsersAutocomplete';
 import { toDelimitedString, getBestAndAverage, toMilliseconds } from '../services/results-service';
 
+// problem - while selecting an existing user we should mark his result as editing. This is hard for new users with curremt implemetation
+// try to replace perfById with userOption
+
 // TODO use this model for input row only. The values should not be null for the results
 type ResultUIItem = {
     id: number | null,
@@ -66,6 +69,7 @@ const EditResults = (props: ResultsComponentProps) => {
     const defaultEditingResult = {
         id: null,
         performedById: null,
+        // performedBy: null,
         attempt1: null,
         attempt2: null,
         attempt3: null,
@@ -89,29 +93,24 @@ const EditResults = (props: ResultsComponentProps) => {
     const [ selectedUserOption, setSelectedUserOption ] = useState<UserOption | null>(null);
     const [ allUserOptions, setAllUserOptions ] = useState<UserOption[]>([]);
 
-    const getUserDisplayName = (user: User): string => {
-        return `${user.firstName} ${user.lastName}`;
-    }
-
     useEffect(() => {
         if (contestIdNumber > 0) {
             const getContest = fetch(`http://localhost:3000/contests/${contestIdNumber}`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
-            });
+            }).then(r => r.json());
 
             const getUsers = fetch(`http://localhost:3000/users`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
-            });
+            }).then(r => r.json());
 
             // TODO error handling
             Promise.all([ getContest, getUsers ])
-                .then(r => Promise.all(r.map(res => !res ? Promise.resolve(null) : res.json())))
                 .then(([contest, users]) => {
                     // TODO find a way to preserve return types
                     setAllUserOptions(users.map((u: User) => {
-                        return { displayName: getUserDisplayName(u), userId: u.id, disabled: false };
+                        return new UserOption(u.id, false, u.firstName, u.lastName);
                     }));
 
                     const contestResults = (contest as Contest).rounds.flatMap(round => round.results).map(r => {
@@ -262,7 +261,24 @@ const EditResults = (props: ResultsComponentProps) => {
     }
 
     const onCompetitorSelect = (userOption: UserOption | null) => {
+        console.log('current options');
+        console.log(allUserOptions);
+        
+        console.log('selected option');
+        console.log(userOption);
+      
+        // TODO probably all 3 state updates can be done using only one entry, e.g - userOption.selected
+        // add a new user to the dropdown options so he can be selected in other rounds
+        if (!!userOption && !allUserOptions.find(uo => uo.firstName === userOption.firstName && uo.lastName === userOption.lastName)) {
+            userOption.manuallyCreated = true;
+
+            setAllUserOptions(userOptions => {
+                return [ ...userOptions, userOption ];
+            });
+        }
+
         setSelectedUserOption(userOption);
+
         setState(state => {
             return {
                 ...state,
@@ -331,6 +347,8 @@ const EditResults = (props: ResultsComponentProps) => {
             return result;
         });
 
+        console.log(results);
+        
         const res = await fetch(`http://localhost:3000/results/${state.contest?.id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
@@ -338,7 +356,7 @@ const EditResults = (props: ResultsComponentProps) => {
         });
 
         if (!res.ok) {
-            addNotification({ message: 'Произошла ошибка при сохранении результато. Повторите попытку позже.' });
+            addNotification({ message: 'Произошла ошибка при сохранении результатов. Повторите попытку позже.' });
         }
 
         goToContestsList();
@@ -417,12 +435,15 @@ const EditResults = (props: ResultsComponentProps) => {
         editingResult.attempt3,
         editingResult.attempt4,
         editingResult.attempt5,
-    ].every(i => isAttemptInputValid(i)) && !!editingResult.performedById && 
+    ].every(i => isAttemptInputValid(i)) && editingResult.performedById !== null && 
         // only one result for a user is allowed
-        selectedRoundResults.every(r => r.performedById !== editingResult.performedById || r.isEditing);
+        selectedRoundResults.every(r => r.performedById !== editingResult.performedById || r.isEditing || r.performedById === 0);
 
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
         !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedById;
+
+    console.log('all uos');
+    console.log(allUserOptions);
 
     const roundHasResults = (roundId: number) => {
         return state.contestResults.some(r => r.roundId === roundId);
@@ -577,7 +598,7 @@ const EditResults = (props: ResultsComponentProps) => {
                     <tbody>
                         {selectedRoundResults.map((r, i) => {
                             return (
-                                <tr key={r.id}>
+                                <tr key={i}>
                                     <td className='td-order'>{++i}</td>
                                     <td className='td-name' onClick={() => onUserClick(r.performedById)}>
                                         <p className='user-name'>

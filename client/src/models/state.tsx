@@ -57,10 +57,37 @@ export type User = {
     lastName: string,
 }
 
-export interface UserOption {
-    displayName: string
-    userId: number,
-    disabled: boolean,
+export const USER_OPTIONS_NEW_USER_VALUE = 0;
+export const USER_OPTIONS_MIN_SYMBOLS_VALUE = -1;
+export const USER_OPTIONS_LOADING_VALUE = -2;
+export const USER_OPTIONS_INVALID_INPUT_VALUE = -3;
+
+export class UserOption {
+
+    constructor(
+        public userId: number,
+        public disabled: boolean, 
+        public firstName?: string,
+        public lastName?: string,
+        public manuallyCreated?: boolean,
+    ) {}
+
+    get displayName(): string {
+        if (this.userId === USER_OPTIONS_LOADING_VALUE) {
+            return 'Загрузка...';
+        }
+        if (this.userId === USER_OPTIONS_MIN_SYMBOLS_VALUE) {
+            return 'Введите мин. 3 символа';
+        }
+        if (this.userId === USER_OPTIONS_NEW_USER_VALUE && !this.manuallyCreated) {
+            return `Создать участника: ${this.firstName} ${this.lastName}`;
+        }
+        if (this.userId === USER_OPTIONS_INVALID_INPUT_VALUE) {
+            return `Введите имя в формате 'Иван Иванов'`;
+        }
+
+        return `${this.firstName} ${this.lastName}`;
+    } 
 }
 
 export const ADD_NEW_USER_OPTION_VALUE = 0;

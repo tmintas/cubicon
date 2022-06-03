@@ -1,5 +1,4 @@
 import { prisma } from "..";
-import { getAllResults } from "./result.controller";
 
 export const getAllUsers = async (req: any, res: any) => {
     try {
@@ -22,9 +21,27 @@ export const postUser = async (req: any, res: any) => {
         res.status(201).json(createdUser);
     }
     catch (error: any) {
+        console.log(error);
+        
         res.status(404).json({ message: error.message });
     }   
 };
+
+export const createManyUsers = async (req: any, res: any) => {
+    try {
+        const usersData = req.body;
+        const createdUsers = await prisma.user.createMany({
+            data: usersData,
+        });
+
+        res.status(201).json(createdUsers);
+    }
+    catch (error: any) {
+        console.log(error);
+        
+        res.status(500).json({ message: error.message });
+    } 
+}
 
 export const deleteUser = async (req: any, res: any) => {
     try {

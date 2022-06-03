@@ -1,13 +1,17 @@
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import { TextField } from "@mui/material";
+import { InputAdornment, TextField } from "@mui/material";
+import { UserOption, USER_OPTIONS_INVALID_INPUT_VALUE, USER_OPTIONS_LOADING_VALUE, USER_OPTIONS_MIN_SYMBOLS_VALUE, USER_OPTIONS_NEW_USER_VALUE } from '../../models/state';
+import { AccountCircle } from '@mui/icons-material';
 
-interface UserOption {
-    displayName: string
-    userId: number,
-    disabled: boolean,
+type UsersAutocompleteProps = {
+    allUserOptions: UserOption[],
+    selectedUserOption: UserOption | null,
+    addNewUserOptionValue: number,
+    children: React.ReactNode,
+    onUserSelect: (option: UserOption | null) => any,
 }
 
-const UsersAutocomplete = (props: any) => {
+const UsersAutocomplete = (props: UsersAutocompleteProps) => {
     const { allUserOptions, selectedUserOption, onUserSelect, addNewUserOptionValue } = props;
     const addParticipantText = 'Создать участника: ';
     const filterUser = createFilterOptions<UserOption>();
@@ -19,20 +23,29 @@ const UsersAutocomplete = (props: any) => {
                 filterOptions={(_, params) => {
                     const { inputValue } = params;
 
-                    // do not show anything until user types 3 symbols
-                    if (inputValue.length < 3) 
-                        return [ { displayName: `Введите мин. 3 символа`, userId: null, disabled: true } ];
-
                     // show loading indicator
                     // TODO test with slow backend responses
                     if (!allUserOptions.length) 
-                        return [ { displayName: 'Загрузка...', userId: null, disabled: true }];
+                        return [ new UserOption(USER_OPTIONS_LOADING_VALUE, true) ];
 
+                    // do not show options until user types 3 symbols
+                    if (inputValue.length < 3) 
+                        return [ new UserOption(USER_OPTIONS_MIN_SYMBOLS_VALUE, true) ];
+                        
                     const filtered = filterUser(allUserOptions, params);
 
-                    // add participant opion
-                    if (!filtered.length) 
-                        return [ { displayName: `${addParticipantText}${inputValue}`, userId: addNewUserOptionValue, disabled: false } ];
+                    if (!filtered.length) {
+                        const firstNameInput = inputValue.split(' ')[0];
+                        const lastNameInput = inputValue.split(' ')[1];
+                        
+                        // enter valid value option
+                        if (!lastNameInput) {
+                            return [ new UserOption(USER_OPTIONS_INVALID_INPUT_VALUE, true) ];
+                        }
+                        
+                        // add participant option
+                        return [ new UserOption(USER_OPTIONS_NEW_USER_VALUE, false, firstNameInput, lastNameInput) ];
+                    }
 
                     return filtered;
                 }}
@@ -55,14 +68,18 @@ const UsersAutocomplete = (props: any) => {
                     }
 
                     return (
-                        <TextField {...params} label="Выберите пользователя:" />
+                        <TextField 
+                            {...params} 
+                            label="Выберите пользователя:" 
+                            placeholder='Иван Иванов' 
+                            variant='standard'
+                        />
                     )
                 }}
                 renderOption={(props, option) => {
-                    const { displayName } = option;
                     return (
                         <span {...props} style={{ color: '#bcb7b7' }}>
-                        {displayName}
+                            {`${option.displayName} ${option.manuallyCreated ? ' (новый)' : ''}`}
                         </span>
                     );
                 }}

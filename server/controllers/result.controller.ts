@@ -1,4 +1,4 @@
-import { Contest, ContestStatus, Result } from "@prisma/client";
+import { ContestStatus, Result } from "@prisma/client";
 import { prisma } from "..";
 
 const DNF = -1;
