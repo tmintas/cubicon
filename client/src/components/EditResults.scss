@@ -71,7 +71,7 @@
             }
 
             td.td-name {
-                padding-left: 10px;
+                padding-left: 17px;
 
                 p.user-name {
                     &:hover {
@@ -94,6 +94,7 @@
 
             td {
                 text-align: center;
+                vertical-align: bottom;
             }
 
             .MuiOutlinedInput-root {
@@ -105,6 +106,7 @@
 
                 &.res-input {
                     width: 80%;
+                    padding-bottom: 5px;
                 }
             }
 

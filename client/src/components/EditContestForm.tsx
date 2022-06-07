@@ -86,7 +86,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                         userId: contestInfo.organizedById, 
                         disabled: false, 
                         displayName: getUserDisplayName(users.find((u: User) => u.id === contestInfo.organizedById)),
-                    })
+                    });
                 }
 
                 setFormState(state => {
@@ -100,14 +100,24 @@ const EditContestForm = (props: ErrorHandlerProps) => {
             });
     }, []);
 
-    const onOrganizerSelect = (userOption: UserOption | null) => {
+    const onOrganizerSelect = (userOption: UserOption) => {
         setSelectedUserOption(userOption);
         setFormState(state => {
             return {
                 ...state,
-                organizedById: userOption?.userId ?? null,
+                organizedById: userOption.userId,
             }
-        })
+        });
+    }
+
+    const onOrganizerReset = () => {
+        setSelectedUserOption(null);
+        setFormState(state => {
+            return {
+                ...state,
+                organizedById: null,
+            }
+        });
     }
 
     const getUserDisplayName = (user: User): string => {
@@ -255,7 +265,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                                     allUserOptions={formState.allUserOptions} 
                                     selectedUserOption={selectedUserOption}
                                     onUserSelect={onOrganizerSelect}
-                                    addNewUserOptionValue={ADD_NEW_USER_OPTION_VALUE}
+                                    onUserReset={onOrganizerReset}
                                 >
                                 </UsersAutocomplete>
                             </td>

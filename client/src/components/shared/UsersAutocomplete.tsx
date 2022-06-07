@@ -5,13 +5,13 @@ import { UserOption, USER_OPTIONS_INVALID_INPUT_VALUE, USER_OPTIONS_LOADING_VALU
 type UsersAutocompleteProps = {
     allUserOptions: UserOption[],
     selectedUserOption: UserOption | null,
-    addNewUserOptionValue: number,
     children: React.ReactNode,
-    onUserSelect: (option: UserOption | null) => any,
+    onUserSelect: (option: UserOption) => any,
+    onUserReset: () => any,
 }
 
 const UsersAutocomplete = (props: UsersAutocompleteProps) => {
-    const { allUserOptions, selectedUserOption, onUserSelect } = props;
+    const { allUserOptions, selectedUserOption, onUserSelect, onUserReset } = props;
     const addParticipantText = 'Создать участника: ';
     const filterUser = createFilterOptions<UserOption>();
 
@@ -30,7 +30,7 @@ const UsersAutocomplete = (props: UsersAutocompleteProps) => {
                     // do not show options until user types 3 symbols
                     if (inputValue.length < 3) 
                         return [ new UserOption(USER_OPTIONS_MIN_SYMBOLS_VALUE, true) ];
-                        
+
                     const filtered = filterUser(allUserOptions, params);
 
                     if (!filtered.length) {
@@ -53,8 +53,12 @@ const UsersAutocomplete = (props: UsersAutocompleteProps) => {
                 }}
                 value={selectedUserOption}
                 onChange={(_, option) => {
-                    onUserSelect(option);
-                }}      
+                    if (!!option) {
+                        onUserSelect(option);
+                    } else {
+                        onUserReset();
+                    }
+                }}    
                 options={[]}
                 renderInput={(params) => {
                     // vs code complains about value property of inputProps here, so add 'any'

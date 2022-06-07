@@ -14,9 +14,6 @@ import { Notification } from '../models/state';
 import UsersAutocomplete from './shared/UsersAutocomplete';
 import { toDelimitedString, getBestAndAverage, toMilliseconds } from '../services/results-service';
 
-// problem - while selecting an existing user we should mark his result as editing. This is hard for new users with curremt implemetation
-// try to replace perfById with userOption
-
 // TODO use this model for input row only. The values should not be null for the results
 type ResultUIItem = {
     id: number | null,
@@ -40,13 +37,12 @@ type ResultUIItem = {
 
 type ResulstFormState = {
     loaded: boolean,
-
-    // contest info loaded from backend
-    contest: Contest | null,
-
     selectedRoundId: number,
     contestResults: ResultUIItem[],
     editingResult: ResultUIItem,
+
+    // contest info loaded from backend
+    contest: Contest | null,
 }
 
 type ResultsComponentProps = ErrorHandlerProps & {
@@ -164,6 +160,31 @@ const EditResults = (props: ResultsComponentProps) => {
         ];
     }
 
+    const selectResultForEditing = (result: ResultUIItem) => {
+        setState((state) => {
+            return {
+                ...state,
+                editingResult: result,
+                contestResults: [...state.contestResults].map(r => {
+                    if (isTheSameUser(r.performedBy, result.performedBy) && r.roundId === state.selectedRoundId) {
+                        r.isEditing = true;
+                        return r;
+                    } else {
+                        r.isEditing = false;
+                        return r;
+                    }
+                }),
+            };
+        });
+
+        const userOption = allUserOptions.find(uo => uo.firstName === result.performedBy?.firstName && uo.lastName === result.performedBy?.lastName);
+
+        if (!userOption)
+            return;
+
+        setSelectedUserOption(userOption);
+    }
+
     // event handlers
     const onRoundSelect = (roundId: number) => {
         onClearResultClick();
@@ -259,12 +280,26 @@ const EditResults = (props: ResultsComponentProps) => {
         });
     }
 
-    const onCompetitorSelect = (userOption: UserOption | null) => {
-        // TODO split selet and clear actions and remove | null here
-      
+    const onCompetitorReset = () => {
+        setSelectedUserOption(null);
+
+        setState(state => {
+            return {
+                ...state,
+                editingResult: {
+                    ...editingResult,
+                    performedBy: null,
+                },
+            }
+        });
+    }        
+
+    const onCompetitorSelect = (userOption: UserOption) => {
+        setSelectedUserOption(userOption);
+
         // TODO probably all 3 state updates can be done using only one entry, e.g - userOption.selected
         // add a new user to the dropdown options so he can be selected in other rounds
-        if (!!userOption && !allUserOptions.find(uo => uo.firstName === userOption.firstName && uo.lastName === userOption.lastName)) {
+        if (!allUserOptions.find(uo => uo.firstName === userOption.firstName && uo.lastName === userOption.lastName)) {
             userOption.manuallyCreated = true;
 
             setAllUserOptions(userOptions => {
@@ -272,18 +307,31 @@ const EditResults = (props: ResultsComponentProps) => {
             });
         }
 
-        setSelectedUserOption(userOption);
+        const existingResultForCompetitor = selectedRoundResults.find(r => {
+            if (!r.performedBy) 
+                return false;
+
+            return r.performedBy.firstName === userOption.firstName && r.performedBy.lastName === userOption.lastName;
+        });
+
+        if (!!existingResultForCompetitor) {
+            selectResultForEditing(existingResultForCompetitor);
+
+            return;
+        }
+
+        const performedBy = {
+            id: userOption.userId,
+            firstName: userOption.firstName ?? '',
+            lastName: userOption.lastName ?? '',
+        }
 
         setState(state => {
             return {
                 ...state,
                 editingResult: {
                     ...editingResult,
-                    performedBy: {
-                        id: userOption?.userId ?? 0,
-                        firstName: userOption?.firstName ?? '',
-                        lastName: userOption?.lastName ?? '',
-                    },
+                    performedBy,
                 },
             }
         })
@@ -300,24 +348,7 @@ const EditResults = (props: ResultsComponentProps) => {
     }
 
     const onEditResultClick = (result: ResultUIItem) => {
-        setState((state) => {
-            return {
-                ...state,
-                editingResult: result,
-                contestResults: [...state.contestResults].map(r => {
-                    if (isTheSameUser(r.performedBy, result.performedBy) && r.roundId === state.selectedRoundId) {
-                        r.isEditing = true;
-                        return r;
-                    } else {
-                        r.isEditing = false;
-                        return r;
-                    }
-                }),
-            };
-        });
-
-        const userOption = allUserOptions.find(uo => uo.firstName === result.performedBy?.firstName && uo.lastName === result.performedBy?.lastName) as UserOption;
-        setSelectedUserOption(userOption);
+        selectResultForEditing(result);
     }
 
     const onUserClick = (userId: number | null) => {
@@ -436,7 +467,7 @@ const EditResults = (props: ResultsComponentProps) => {
         editingResult.attempt3,
         editingResult.attempt4,
         editingResult.attempt5,
-    ].every(i => isAttemptInputValid(i)) && editingResult.performedBy?.id !== null && 
+    ].every(i => isAttemptInputValid(i)) && !!editingResult.performedBy && !!editingResult.performedBy.firstName && !!editingResult.performedBy.lastName && 
         // only one result for a user is allowed
         selectedRoundResults.every(r => r.performedBy?.id !== editingResult.performedBy?.id || r.isEditing || r.performedBy?.id === 0);
 
@@ -475,12 +506,13 @@ const EditResults = (props: ResultsComponentProps) => {
 
     const inputRowCells = !editingResult ? <div>empty</div> :
         <>
+            <td></td>
             <td>
                 <UsersAutocomplete 
                     allUserOptions={allUserOptions} 
                     selectedUserOption={selectedUserOption}
                     onUserSelect={onCompetitorSelect}
-                    addNewUserOptionValue={ADD_NEW_USER_OPTION_VALUE}
+                    onUserReset={onCompetitorReset}
                 >
                 </UsersAutocomplete>
             </td>
@@ -624,7 +656,6 @@ const EditResults = (props: ResultsComponentProps) => {
                         {isEditingMode && <>
                             <tr></tr>
                             <tr className='input-row'>
-                                <td></td>
                                 {inputRowCells}
                             </tr>
                         </>}
