@@ -27,7 +27,7 @@ type ResultUIItem = {
     attempt5: string | null,
     best: string | null,
     average: string | null,
-    performedById: number | null,
+    performedBy: User | null,
     roundId: number,
 
     // indicates that the result is being edited
@@ -68,8 +68,7 @@ const EditResults = (props: ResultsComponentProps) => {
 
     const defaultEditingResult = {
         id: null,
-        performedById: null,
-        // performedBy: null,
+        performedBy: null,
         attempt1: null,
         attempt2: null,
         attempt3: null,
@@ -123,7 +122,7 @@ const EditResults = (props: ResultsComponentProps) => {
                             attempt5: toDelimitedString(r.attempt5),
                             best: toDelimitedString(r.best),
                             average: toDelimitedString(r.average),
-                            performedById: r.performedById,
+                            performedBy: r.performedBy,
                             roundId: r.roundId,
                         } as ResultUIItem;
 
@@ -261,11 +260,7 @@ const EditResults = (props: ResultsComponentProps) => {
     }
 
     const onCompetitorSelect = (userOption: UserOption | null) => {
-        console.log('current options');
-        console.log(allUserOptions);
-        
-        console.log('selected option');
-        console.log(userOption);
+        // TODO split selet and clear actions and remove | null here
       
         // TODO probably all 3 state updates can be done using only one entry, e.g - userOption.selected
         // add a new user to the dropdown options so he can be selected in other rounds
@@ -284,7 +279,11 @@ const EditResults = (props: ResultsComponentProps) => {
                 ...state,
                 editingResult: {
                     ...editingResult,
-                    performedById: userOption?.userId ?? null
+                    performedBy: {
+                        id: userOption?.userId ?? 0,
+                        firstName: userOption?.firstName ?? '',
+                        lastName: userOption?.lastName ?? '',
+                    },
                 },
             }
         })
@@ -306,7 +305,7 @@ const EditResults = (props: ResultsComponentProps) => {
                 ...state,
                 editingResult: result,
                 contestResults: [...state.contestResults].map(r => {
-                    if (r.performedById === result.performedById && r.roundId === state.selectedRoundId) {
+                    if (isTheSameUser(r.performedBy, result.performedBy) && r.roundId === state.selectedRoundId) {
                         r.isEditing = true;
                         return r;
                     } else {
@@ -317,7 +316,7 @@ const EditResults = (props: ResultsComponentProps) => {
             };
         });
 
-        const userOption = allUserOptions.find(uo => uo.userId === result.performedById) as UserOption;
+        const userOption = allUserOptions.find(uo => uo.firstName === result.performedBy?.firstName && uo.lastName === result.performedBy?.lastName) as UserOption;
         setSelectedUserOption(userOption);
     }
 
@@ -341,14 +340,16 @@ const EditResults = (props: ResultsComponentProps) => {
                 attempt5: attemptsMs[4],
                 best: getBestAndAverage(attemptsMs)[0],
                 average: getBestAndAverage(attemptsMs)[1],
-                performedById: r.performedById,
+                performedBy: {
+                    id: r.performedBy?.id,
+                    firstName: r.performedBy?.firstName,
+                    lastName: r.performedBy?.lastName,
+                },
             };
 
             return result;
         });
 
-        console.log(results);
-        
         const res = await fetch(`http://localhost:3000/results/${state.contest?.id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
@@ -415,7 +416,7 @@ const EditResults = (props: ResultsComponentProps) => {
         if (avg1 < 0 && avg2 < 0) {
             // if both bests are DNF/DNS, sort by competitor names
             if (best1 < 0 && best2 < 0) {
-                return !!previous.performedById && !!next.performedById && previous.performedById > next.performedById ? 1 : DNF;
+                return !!previous.performedBy?.id && !!next.performedBy?.id && previous.performedBy?.id > next.performedBy?.id ? 1 : DNF;
             }
 
             return !!best1 && !!best2 && best1 > best2 ? 1 : DNF;
@@ -435,18 +436,21 @@ const EditResults = (props: ResultsComponentProps) => {
         editingResult.attempt3,
         editingResult.attempt4,
         editingResult.attempt5,
-    ].every(i => isAttemptInputValid(i)) && editingResult.performedById !== null && 
+    ].every(i => isAttemptInputValid(i)) && editingResult.performedBy?.id !== null && 
         // only one result for a user is allowed
-        selectedRoundResults.every(r => r.performedById !== editingResult.performedById || r.isEditing || r.performedById === 0);
+        selectedRoundResults.every(r => r.performedBy?.id !== editingResult.performedBy?.id || r.isEditing || r.performedBy?.id === 0);
 
     const newResultIsCleared = !editingResult.attempt1 && !editingResult.attempt2 && !editingResult.attempt3 && 
-        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedById;
-
-    console.log('all uos');
-    console.log(allUserOptions);
+        !editingResult.attempt4 && !editingResult.attempt5 && !editingResult.performedBy?.id;
 
     const roundHasResults = (roundId: number) => {
         return state.contestResults.some(r => r.roundId === roundId);
+    }
+
+    const isTheSameUser = (user1: User | null, user2: User | null) => {
+        if (!user1 || !user2) return false;
+
+        return user1.id === user2.id && user1.firstName === user2.firstName && user1.lastName === user2.lastName;
     }
 
     // TSX elements
@@ -600,9 +604,10 @@ const EditResults = (props: ResultsComponentProps) => {
                             return (
                                 <tr key={i}>
                                     <td className='td-order'>{++i}</td>
-                                    <td className='td-name' onClick={() => onUserClick(r.performedById)}>
+                                    <td className='td-name' onClick={() => onUserClick(r.performedBy?.id ?? null)}>
                                         <p className='user-name'>
-                                            { allUserOptions.find(uo => uo.userId === r.performedById)?.displayName ?? '' }
+                                            { allUserOptions.find(uo => uo.userId === r.performedBy?.id &&
+                                                uo.firstName === r.performedBy?.firstName && uo.lastName === r.performedBy?.lastName)?.displayName ?? '' }
                                         </p>
                                     </td>
                                     <td className='td-res'>{r.best}</td>

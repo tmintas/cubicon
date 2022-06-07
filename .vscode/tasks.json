@@ -6,19 +6,27 @@
             "type": "shell",
             "command": "npm run start",
             "options": {
-              "cwd": "${workspaceFolder}/client"
+                "cwd": "${workspaceFolder}/client"
             }
-          },
-          {
+        },
+        {
             "label": "Run Server",
             "command": "npm run serve",
             "options": {
-              "cwd": "${workspaceFolder}/server"
+                "cwd": "${workspaceFolder}/server"
             }
-          },
-          {
+        },
+        {
             "label": "Run Server + Client",
             "dependsOn": ["Run Client", "Run Server"]
-          }
+        },
+        {
+            "label": "Compile Server",
+            "type": "npm",
+            "script": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            }
+        }
     ]
 }

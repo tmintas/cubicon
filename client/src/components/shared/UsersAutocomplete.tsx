@@ -1,7 +1,6 @@
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import { InputAdornment, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import { UserOption, USER_OPTIONS_INVALID_INPUT_VALUE, USER_OPTIONS_LOADING_VALUE, USER_OPTIONS_MIN_SYMBOLS_VALUE, USER_OPTIONS_NEW_USER_VALUE } from '../../models/state';
-import { AccountCircle } from '@mui/icons-material';
 
 type UsersAutocompleteProps = {
     allUserOptions: UserOption[],
@@ -12,7 +11,7 @@ type UsersAutocompleteProps = {
 }
 
 const UsersAutocomplete = (props: UsersAutocompleteProps) => {
-    const { allUserOptions, selectedUserOption, onUserSelect, addNewUserOptionValue } = props;
+    const { allUserOptions, selectedUserOption, onUserSelect } = props;
     const addParticipantText = 'Создать участника: ';
     const filterUser = createFilterOptions<UserOption>();
 

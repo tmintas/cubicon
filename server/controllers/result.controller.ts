@@ -1,8 +1,13 @@
-import { ContestStatus, Result } from "@prisma/client";
+import { ContestStatus, Result, User } from "@prisma/client";
 import { prisma } from "..";
 
 const DNF = -1;
 const DNS = -2;
+
+// stores additional user information for creation of new users
+type ResultUIItem = Result & {
+    performedBy: User,
+}
 
 export const getAllResults = async (req: any, res: any) => {
     try {
@@ -19,13 +24,12 @@ export const updateResults = async (req: any, res: any) => {
     const contestId = +req.params.id;
 
     try {
-        const results: Result[] = req.body;
+        const results: ResultUIItem[] = req.body;
         const contestRounds = await prisma.round.findMany({
             where: {
                 contestId,
             },
         });
-        const roundIds = contestRounds.map(r => r.id);
 
         // check if all rounds have results
         if (!contestRounds.every(r => results.find(res => res.roundId === r.id))) {
@@ -46,44 +50,25 @@ export const updateResults = async (req: any, res: any) => {
         for (let r of results) {
             const attempts = [ r.attempt1, r.attempt2, r.attempt3, r.attempt4, r.attempt5 ];
 
-            const calculatedBest = attempts.every(a => a === DNF || a === DNS) 
-                ? attempts[0]
-                : attempts.filter(a => a !== DNF && a !== DNS).sort((a, b) => a - b)[0];
+            const calculatedBest = calculateBest(attempts);
 
             if (calculatedBest !== r.best) {
                 res.status(400).json({ message: 'best is incorrect'});
 
                 return;
             }
-
-            const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(calculatedBest));
-            const firstDNForDNS = withoutBest.find(a => a === DNF || a === DNS);
-            const worst = firstDNForDNS ? firstDNForDNS : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
-            const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
     
-            const calculatedAvg = Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
-
-            if (calculatedAvg !== r.average) {
+            if (calculateAvg(attempts) !== r.average) {
                 res.status(400).json({ message: 'average is incorrect'});
 
                 return;
             }
         }
 
-        const contest = await prisma.contest.findFirst({
-            where: {
-                id: contestId,
-            }
-        });
-
-        if (contest === null) {
-            res.status(404).json({ message: `contest with id ${contestId} was not found!` });
-
-            return;
-        }
-
-        if (contest.status === ContestStatus.PUBLISHED) {
-            res.status(400).json({ message: `you cannot edit a published contest!` });
+        // validate and update contest
+        const validationErrorMessage = await validateContest(contestId);
+        if (validationErrorMessage) {
+            res.status(400).json({ message: validationErrorMessage });
 
             return;
         }
@@ -101,13 +86,22 @@ export const updateResults = async (req: any, res: any) => {
         await prisma.result.deleteMany({
             where: {
                 roundId: {
-                    in: roundIds,
+                    in: contestRounds.map(r => r.id),
                 }
             }
         })
 
+        const createdUsers = await createNewUsers(results);
+
         const creationResult = await prisma.result.createMany({
-            data: results.map((r: Result) => {
+            data: results.map(r => {
+                const performedBy = r.performedBy;
+                const createdUser = createdUsers.find(u => u.firstName === performedBy.firstName && u.lastName === performedBy.lastName);
+
+                // get id from existing users meaning that the result was entered for an existing user
+                // or from created user - result was entered for a new user
+                const performedById = performedBy.id || createdUser?.id || 0;
+                
                 return {
                     attempt1: r.attempt1,
                     attempt2: r.attempt2,
@@ -117,7 +111,7 @@ export const updateResults = async (req: any, res: any) => {
                     best: r.best,
                     average: r.average,
                     roundId: r.roundId,
-                    performedById: r.performedById,
+                    performedById: performedById,
                 }
             }),
             skipDuplicates: true,
@@ -126,6 +120,8 @@ export const updateResults = async (req: any, res: any) => {
         res.status(204).json(creationResult);
     }
     catch (error: any) {
+        console.log(error);
+        
         res.status(500).json({ message: error.message });
         res.end();
 
@@ -173,4 +169,56 @@ const isAttemptValid = (attemptValueMs: number) => {
     if (attemptValueMs === DNF || attemptValueMs === DNS) return true;
 
     return attemptValueMs > 0;
+}
+
+const createNewUsers = async (results: ResultUIItem[]) => {
+    const usersToBeCreated = results.filter(r => !r.performedBy.id).map(r => {
+        return {
+            firstName: r.performedBy.firstName,
+            lastName: r.performedBy.lastName,
+        }
+    });
+    
+    await prisma.user.createMany({
+        data: usersToBeCreated
+    });
+
+    const createdUsers = await prisma.user.findMany({
+        where: {
+            OR: usersToBeCreated
+        }
+    });
+
+    return createdUsers;
+}
+
+const calculateBest = (attempts: number[]) => {
+    return attempts.every(a => a === DNF || a === DNS) 
+        ? attempts[0]
+        : attempts.filter(a => a !== DNF && a !== DNS).sort((a, b) => a - b)[0];
+}
+
+const calculateAvg = (attempts: number[]) => {
+    const withoutBest: number[] = attempts.filter((_, i) => i !== attempts.indexOf(calculateBest(attempts)));
+    const firstDNForDNS = withoutBest.find(a => a === DNF || a === DNS);
+    const worst = firstDNForDNS ? firstDNForDNS : withoutBest.reduce((prev, cur) => cur > prev ? cur : prev, withoutBest[0]);
+    const withoutBestAndWorst: number[] = withoutBest.filter((_, i) => i !== withoutBest.indexOf(worst));
+
+    return Math.floor(withoutBestAndWorst.reduce((prev, cur) => prev + cur, 0) / 3);
+}
+
+const validateContest = async (contestId: number) => {
+    const contest = await prisma.contest.findFirst({
+        where: {
+            id: contestId,
+        }
+    });
+
+    if (contest === null) {
+        return `contest with id ${contestId} was not found!`;
+    }
+
+    if (contest.status === ContestStatus.PUBLISHED) {
+        return `you cannot edit a published contest!`;
+    }
 }

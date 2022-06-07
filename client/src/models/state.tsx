@@ -33,7 +33,7 @@ export type Result = {
     attempt5: number,
     best: number,
     average: number,
-    performedById: number,
+    performedBy: User,
     roundId: number,
 }
 

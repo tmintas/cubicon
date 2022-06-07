@@ -5,23 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Server",
+            "program": "${workspaceFolder}/server/dist/index.js",
+            "request": "launch",
+            "type": "node",
+            "preLaunchTask": "Compile Server",
+        },
+        {
             "name": "Attach and Debug Client",
             "request": "launch",
             "type": "chrome",
             "url": "http://localhost:3001",
             "webRoot": "${workspaceFolder}/client/src",
         },
-        {
-            "type": "pwa-node",
-            "request": "launch",
-            "name": "Run and Debug Server",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/server/dist/index.js",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
-        }
     ]
 }
