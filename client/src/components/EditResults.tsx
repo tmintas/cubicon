@@ -3,8 +3,8 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ADD_NEW_USER_OPTION_VALUE, Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
 import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormButton from './shared/FormButton';
@@ -57,10 +57,9 @@ const EditResults = (props: ResultsComponentProps) => {
     
     const navigate = useNavigate();
     const { id: contestId } = useParams();
+    const { search } = useLocation();
 
-    const [ params ] = useSearchParams();
-    const isAdmin: boolean = params.get('isAdmin') === 'true';
-    const showUpcoming: boolean = params.get('showUpcoming') === 'true';
+    const contestIdNumber = Number(contestId);
 
     const defaultEditingResult = {
         id: null,
@@ -399,7 +398,7 @@ const EditResults = (props: ResultsComponentProps) => {
     }
 
     const goToContestsList = () => {
-        navigate(`../contests?showUpcoming=${showUpcoming ? 'true': 'false'}&isAdmin=${isAdmin ? 'true' : 'false'}`);
+        navigate(`../contests${search}`);
     }
 
     // UI variables
@@ -434,9 +433,6 @@ const EditResults = (props: ResultsComponentProps) => {
             );
     };
 
-    const contestIdNumber = Number(contestId);
-    const editingResult = state.editingResult;
-
     const sortResults = (previous: ResultUIItem, next: ResultUIItem) => {
         const avg1 = toMilliseconds(previous.average);
         const avg2 = toMilliseconds(next.average);
@@ -459,6 +455,8 @@ const EditResults = (props: ResultsComponentProps) => {
     const selectedRoundResults = state.contestResults
         .filter(r => r.roundId === state.selectedRoundId)
         .sort((a, b) => sortResults(a, b));
+
+    const editingResult = state.editingResult;
 
     // TODO add validation messages to the user
     const isEditingResultValid = [
@@ -609,7 +607,7 @@ const EditResults = (props: ResultsComponentProps) => {
     if (!state.loaded) return <div>Загрузка...</div>;
 
     // TODO create empty box
-    if (!state.contest) return <div>Контест не найде, попробуйте попытку позже.</div>;
+    if (!state.contest) return <div>Контест не найден, попробуйте попытку позже.</div>;
 
     else return (
         <>

@@ -1,6 +1,6 @@
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Contest, ContestStatus } from "../models/state";
 import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
@@ -18,51 +18,16 @@ const ContestList = () => {
     
     const navigate = useNavigate();
     const [ params ] = useSearchParams();
-    const isAdmin: boolean = params.get('isAdmin') === 'true';
+    const { search } = useLocation();
 
+    const isAdmin: boolean = params.get('isAdmin') === 'true';
     const showUpcoming: boolean = params.get('showUpcoming') === 'true';
+
     const [ state, setState ] = useState<ContestsListState>({ 
         isLoaded: false,
         allContests: [],
         showUpcoming,
     });
-    
-    const onEditContestClick = (event: any, contestId: number) => {
-        event.stopPropagation();
-
-        navigate(`./${contestId}/edit`);
-    }
-
-    const onContestItemClick = (event: any, contest: Contest) => {
-        event.stopPropagation();
-        
-        // TODO refactor navigation - move flags to the redux state
-        if (!isAdmin || contest.status === ContestStatus.PUBLISHED) {
-            navigate(`./${contest.id}/results?isAdmin=${isAdmin ? 'true' : 'false'}&showUpcoming=${showUpcoming ? 'true' : 'false'}`);
-        } else {
-            navigate(`./${contest.id}/edit-results?isAdmin=${isAdmin ? 'true' : 'false'}&showUpcoming=${showUpcoming ? 'true' : 'false'}`);
-        }
-    }
-
-    const onDeleteClick = async (contestId: number) => {
-        const response = await fetch(`http://localhost:3000/contests/${contestId}`, {
-            method: 'DELETE',
-            headers: {'Content-Type': 'application/json'},
-        });
-
-        // TODO add error handling
-        if (!response.ok) return;
-
-        const updatedItems = [...state.allContests].filter(c => c.id !== contestId);
-
-        setState(state => {
-            return {
-                ...state,
-                isLoaded: true,
-                allContests: updatedItems,
-            };
-        });
-    }
 
     // initial loading of contests
     useEffect(() => {
@@ -95,6 +60,43 @@ const ContestList = () => {
                 3x3
             </div>
         );
+    }
+
+    const onEditContestClick = (event: any, contestId: number) => {
+        event.stopPropagation();
+
+        navigate(`./${contestId}/edit${search}`);
+    }
+
+    // TODO refactor navigation - move showUpcoming, isAdmin to the redux state
+    const onContestItemClick = (event: any, contest: Contest) => {
+        event.stopPropagation();
+       
+        const pageUrl = isAdmin && contest.status !== ContestStatus.PUBLISHED
+            ? 'edit-results'
+            : 'results';
+
+        navigate(`./${contest.id}/${pageUrl}${search}`);
+    }
+
+    const onDeleteClick = async (contestId: number) => {
+        const response = await fetch(`http://localhost:3000/contests/${contestId}`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+        });
+
+        // TODO add error handling
+        if (!response.ok) return;
+
+        const updatedItems = [...state.allContests].filter(c => c.id !== contestId);
+
+        setState(state => {
+            return {
+                ...state,
+                isLoaded: true,
+                allContests: updatedItems,
+            };
+        });
     }
 
     const toggleContestTab = (showUpcoming: boolean) => {
@@ -224,7 +226,7 @@ const ContestList = () => {
             {
                 isAdmin &&
                 <div className="actions-container">
-                    <FormButton onClick={() => { navigate('./0/edit')}} disabled={false} text="Создать контест"></FormButton>
+                    <FormButton onClick={() => { navigate(`./0/edit${search}`)}} disabled={false} text="Создать контест"></FormButton>
                 </div>
             }
         </>

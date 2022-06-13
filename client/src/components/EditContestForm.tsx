@@ -5,7 +5,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
 import { ErrorHandlerProps, Notification, User, UserOption, ADD_NEW_USER_OPTION_VALUE, RoundFormat } from "../models/state";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
 import UsersAutocomplete from "./shared/UsersAutocomplete";
 
@@ -31,6 +31,7 @@ type ContestFormState = {
 const EditContestForm = (props: ErrorHandlerProps) => {
     let navigate = useNavigate();
     const { id: contestId } = useParams();
+    const { search } = useLocation();
     const contestIdNum =  Number(contestId);
 
     const availableRounds: RoundItem[] = [
@@ -384,7 +385,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                 </table>
 
                 <div className="actions-container">
-                    <FormButton onClick={() => { navigate('../contests?isAdmin=true&showUpcoming=true'); }} disabled={false} text="Назад к списку"></FormButton>
+                    <FormButton onClick={() => { navigate(`../contests${search}`); }} disabled={false} text="Назад к списку"></FormButton>
                     <FormButton onClick={async () => { await handleSubmit(); }} disabled={!isFormValid()} text="Сохранить"></FormButton>
                 </div>
             </div>
