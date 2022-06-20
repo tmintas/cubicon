@@ -17,7 +17,7 @@ const UserList = () => {
     const [ state, setState ] = useState<UserListState>({} as UserListState);
 
     useEffect(() => {
-        fetch('http://localhost:3000/users')
+        fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/users`)
             .then(res => res.json())
             .then((users) => {
                 setState((prevState) => {

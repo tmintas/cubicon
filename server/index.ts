@@ -28,9 +28,4 @@ app.use('/contests', contests);
 app.use('/rounds', rounds);
 app.use('/results', results);
 
-// const corsOptions = {
-//     origin: "http://localhost:3001",
-//     optionsSuccessStatus: 200,
-// }
-
 app.listen(PORT, () => console.log(`Running on ${PORT} ⚡`));

@@ -54,14 +54,14 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
     useEffect(() => {
         const getContestInfo = contestIdNum > 0 
-            ? fetch(`http://localhost:3000/contests/${contestId}`, 
+            ? fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestId}`, 
             {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
             })
             : Promise.resolve(null);
 
-        const getUsers = fetch(`http://localhost:3000/users`, {
+        const getUsers = fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/users`, {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
         })
@@ -149,14 +149,14 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         let response;
 
         if (contestIdNum === 0) {
-            response = await fetch(`http://localhost:3000/contests/`,
+            response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/`,
             {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
             });
         } else {
-            response = await fetch(`http://localhost:3000/contests/${contestId}`,
+            response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestId}`,
             {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},

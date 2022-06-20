@@ -31,7 +31,7 @@ const ContestList = () => {
 
     // initial loading of contests
     useEffect(() => {
-        fetch('http://localhost:3000/contests')
+        fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests`)
             .then(v => v.json())
             .then((contests) => {
                 contests = contests.map((c: any) => {
@@ -80,7 +80,7 @@ const ContestList = () => {
     }
 
     const onDeleteClick = async (contestId: number) => {
-        const response = await fetch(`http://localhost:3000/contests/${contestId}`, {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestId}`, {
             method: 'DELETE',
             headers: {'Content-Type': 'application/json'},
         });
@@ -122,7 +122,7 @@ const ContestList = () => {
             throw new Error(`Контест с id = ${contestId} не найден.`);
         }
 
-        const response = await fetch(`http://localhost:3000/contests/${contestId}/publish`, {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestId}/publish`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
         });

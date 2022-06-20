@@ -29,7 +29,7 @@ const UserProfilePage = () => {
         allResults: [],
     });
 
-    const baseUrl = 'http://localhost:3000/users';
+    const baseUrl = `${process.env.REACT_APP_BACKEND_SERVER_URL}/users`;
 
     useEffect(() => {
         const getUser = fetch(`${baseUrl}/${userId}/profile`).then(res => res.json());

@@ -89,12 +89,12 @@ const EditResults = (props: ResultsComponentProps) => {
 
     useEffect(() => {
         if (contestIdNumber > 0) {
-            const getContest = fetch(`http://localhost:3000/contests/${contestIdNumber}`, {
+            const getContest = fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestIdNumber}`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
             }).then(r => r.json());
 
-            const getUsers = fetch(`http://localhost:3000/users`, {
+            const getUsers = fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/users`, {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
             }).then(r => r.json());
@@ -380,7 +380,7 @@ const EditResults = (props: ResultsComponentProps) => {
             return result;
         });
 
-        const res = await fetch(`http://localhost:3000/results/${state.contest?.id}`, {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/results/${state.contest?.id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(results),
