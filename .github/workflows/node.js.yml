@@ -23,6 +23,9 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: cd server
-    - run: npm ci
-    - run: npm run build --if-present
+    - name: Install Deps
+      working-directory: ./server
+      run: npm ci
+    - name: Build server app
+      working-directory: ./server 
+      run: npm run build --if-present
