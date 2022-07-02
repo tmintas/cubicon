@@ -23,6 +23,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: ./server/package-lock.json
     - name: Install Deps
       working-directory: ./server
       run: npm ci
