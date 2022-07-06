@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import EditUserForm from "./EditUserForm";
 
 type User = {
     email: string,
@@ -59,8 +58,6 @@ const UserList = () => {
                     )
                 })}
             </ul>
-
-            <EditUserForm></EditUserForm>
         </>
     )
 }

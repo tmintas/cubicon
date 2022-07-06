@@ -51,7 +51,7 @@ const UserProfilePage = () => {
                     };
                 })
             });
-    }, []);
+    }, [baseUrl, userId]);
 
     const onContestClick = (contestId: number) => {
         navigate(`../contests/${contestId}/results`);
