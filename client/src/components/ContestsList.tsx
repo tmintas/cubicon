@@ -1,7 +1,7 @@
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Contest, ContestStatus } from "../models/state";
+import { Contest, ContestStatus, ErrorHandlerProps } from "../models/state";
 import './ContestsList.scss';
 import EditIcon from '@mui/icons-material/Edit';
 import FormButton from './shared/FormButton';
@@ -13,7 +13,7 @@ type ContestsListState = {
     showUpcoming: boolean,
 }
 
-const ContestList = () => {
+const ContestList = (props: ErrorHandlerProps) => {
     const monthsAbbreviations = [ 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек' ];
     
     const navigate = useNavigate();
@@ -29,6 +29,8 @@ const ContestList = () => {
         showUpcoming,
     });
 
+    const addNotification = props.addNotification;
+
     // initial loading of contests
     useEffect(() => {
         fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests`)
@@ -40,13 +42,25 @@ const ContestList = () => {
                     return c;
                 });
 
-                setState({
-                    ...state,
-                    isLoaded: true,
-                    allContests: contests,
-                })
+                setState((state) => {
+                    return {
+                        ...state,
+                        isLoaded: true,
+                        allContests: contests,
+                    };
+                });
+            })
+            .catch(() => {
+                setState(state => {
+                    return {
+                        ...state,
+                        loaded: true,
+                    }
+                });
+
+                addNotification({ message: 'Произошла ошибка при загрузке контестов. Повторите попытку позже.' });
             });
-    }, [])  
+    }, [addNotification])  
 
     // stringifies the date object into a human readable format
     const getReadableDate = (date: Date) => {

@@ -1,18 +1,17 @@
-import { useEffect, useState } from 'react';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EditIcon from '@mui/icons-material/Edit';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
-import './EditResults.scss';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import FormButton from './shared/FormButton';
-import { DNF, DNS, DNF_DISPLAY_VALUE, DNS_DISPLAY_VALUE } from '../constants';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import EditIcon from '@mui/icons-material/Edit';
 import ErrorIcon from '@mui/icons-material/Error';
-import { Notification } from '../models/state';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { DNF, DNF_DISPLAY_VALUE, DNS, DNS_DISPLAY_VALUE } from '../constants';
+import { Contest, ErrorHandlerProps, User, UserOption } from '../models/state';
+import { getBestAndAverage, toDelimitedString, toMilliseconds } from '../services/results-service';
+import './EditResults.scss';
+import FormButton from './shared/FormButton';
 import UsersAutocomplete from './shared/UsersAutocomplete';
-import { toDelimitedString, getBestAndAverage, toMilliseconds } from '../services/results-service';
 
 // TODO use this model for input row only. The values should not be null for the results
 type ResultUIItem = {
@@ -53,29 +52,29 @@ type ResultsComponentProps = ErrorHandlerProps & {
 // TODO add validation error messages
 // TODO add tooltips
 const EditResults = (props: ResultsComponentProps) => {
-    const { setNotifications, isEditingMode } = props;
+    const { isEditingMode } = props;
     
     const navigate = useNavigate();
     const { id: contestId } = useParams();
     const { search } = useLocation();
 
-    const contestIdNumber = Number(contestId);
-
-    const defaultEditingResult = {
-        id: null,
-        performedBy: null,
-        attempt1: null,
-        attempt2: null,
-        attempt3: null,
-        attempt4: null,
-        attempt5: null,
-        best: null,
-        average: null,
-        isValid: false,
-        isEditing: false,
-        isAdded: false,
-        roundId: 0,
-    };
+    const defaultEditingResult = useMemo(() => {
+        return {
+            id: null,
+            performedBy: null,
+            attempt1: null,
+            attempt2: null,
+            attempt3: null,
+            attempt4: null,
+            attempt5: null,
+            best: null,
+            average: null,
+            isValid: false,
+            isEditing: false,
+            isAdded: false,
+            roundId: 0,
+        };
+    }, []);
 
     const [ state, setState ] = useState<ResulstFormState>({
         loaded: false,
@@ -87,7 +86,11 @@ const EditResults = (props: ResultsComponentProps) => {
     const [ selectedUserOption, setSelectedUserOption ] = useState<UserOption | null>(null);
     const [ allUserOptions, setAllUserOptions ] = useState<UserOption[]>([]);
 
+    const addNotification = props.addNotification;
+
     useEffect(() => {
+        const contestIdNumber = Number(contestId);
+
         if (contestIdNumber > 0) {
             const getContest = fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestIdNumber}`, {
                 method: 'GET',
@@ -133,21 +136,17 @@ const EditResults = (props: ResultsComponentProps) => {
                     });
                 })
                 .catch(() => {
+                    setState(state => {
+                        return {
+                            ...state,
+                            loaded: true,
+                        }
+                    });
+
                     addNotification({ message: 'Произошла ошибка при загрузке контеста. Повторите попытку позже.' });
                 });
         }
-    }, []);
-
-    // TODO add other types of notifications
-    // combine methods from different components
-    const addNotification = (notification: Notification) => {
-        setNotifications((notifications: Notification[]) => {
-            return [
-                ...notifications,
-                notification,
-            ]
-        });
-    }
+    }, [ addNotification, contestId, defaultEditingResult ]);
     
     const getAttemptsMs = (result: ResultUIItem) => {
         return [ 
@@ -408,7 +407,7 @@ const EditResults = (props: ResultsComponentProps) => {
 
         if (rawValue === DNF_DISPLAY_VALUE || rawValue === DNS_DISPLAY_VALUE) return true;
 
-        const containsOnlyAllowed = /^[\d:\.S]+$/.test(rawValue);
+        const containsOnlyAllowed = /^[\d:.S]+$/.test(rawValue);
         const chars: string[] = rawValue.split('');
         const isOrderCorrect = chars.indexOf(':') < chars.indexOf('.');
         const specialCharsCount = chars.filter((c: string) => c === ':' || c === '.').length;
