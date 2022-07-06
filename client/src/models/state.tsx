@@ -90,8 +90,6 @@ export class UserOption {
     } 
 }
 
-export const ADD_NEW_USER_OPTION_VALUE = 0;
-
 export type ErrorHandlerProps = {
-    setNotifications: any,
+    addNotification: (notification: Notification) => void,
 }

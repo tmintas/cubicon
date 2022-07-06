@@ -4,7 +4,7 @@ import "./EditContestForm.scss";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TextField } from "@mui/material";
-import { ErrorHandlerProps, Notification, User, UserOption, ADD_NEW_USER_OPTION_VALUE, RoundFormat } from "../models/state";
+import { ErrorHandlerProps, User, UserOption, RoundFormat } from "../models/state";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import FormButton from "./shared/FormButton";
 import UsersAutocomplete from "./shared/UsersAutocomplete";
@@ -54,7 +54,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
     useEffect(() => {
         const getContestInfo = contestIdNum > 0 
-            ? fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestId}`, 
+            ? fetch(`${process.env.REACT_APP_BACKEND_SERVER_URL}/contests/${contestIdNum}`, 
             {
                 method: 'GET',
                 headers: {'Content-Type': 'application/json'},
@@ -99,7 +99,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
                     }
                 })
             });
-    }, []);
+    }, [contestIdNum]);
 
     const onOrganizerSelect = (userOption: UserOption) => {
         setSelectedUserOption(userOption);
@@ -123,17 +123,6 @@ const EditContestForm = (props: ErrorHandlerProps) => {
 
     const getUserDisplayName = (user: User): string => {
         return `${user.firstName} ${user.lastName}`;
-    }
-
-    // TODO add other types of notifications
-    // combine methods into centralized error handler from different components
-    const addNotification = (notification: Notification) => {
-        props.setNotifications((notifications: Notification[]) => {
-            return [
-                ...notifications,
-                notification,
-            ]
-        });
     }
 
     const handleSubmit = async () => {
@@ -165,7 +154,7 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         }
 
         if (!response.ok) {
-            addNotification({ message: 'Произошла ошибка при сохранении контеста. Повторите попытку позже.' });
+            props.addNotification({ message: 'Произошла ошибка при сохранении контеста. Повторите попытку позже.' });
         };
 
         navigate('../contests?isAdmin=true');
@@ -188,21 +177,6 @@ const EditContestForm = (props: ErrorHandlerProps) => {
         setFormState({
             ...formState,
             rounds: newRounds,
-        });
-    }
-
-    const setRoundType = (round: RoundItem, roundFormat: RoundFormat) => {
-        setFormState(v => {
-            return {
-                ...v,
-                rounds: v.rounds.map(r => {
-                    if (r.name === round.name) {
-                        r.format = roundFormat;
-                    }
-
-                    return r;
-                })
-            };
         });
     }
 

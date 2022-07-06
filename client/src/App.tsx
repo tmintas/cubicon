@@ -6,13 +6,19 @@ import ContestsList from "./components/ContestsList";
 import EditResults from "./components/EditResults";
 import ErrorIcon from '@mui/icons-material/Error';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Notification } from './models/state';
 import { createTheme, ThemeProvider } from "@mui/material";
 import UserProfilePage from "./components/UserProfilePage";
 
 const App = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    const addNotification = useCallback((notification: Notification) => {
+        setNotifications(notifications => {
+            return [ ...notifications, notification];
+        });
+    }, []);
 
     const removeNotification = (index: number) => {
         setNotifications((notifications: Notification[]) => {
@@ -37,16 +43,16 @@ const App = () => {
                 <div className="main-container">
                     <div className="wrapper">
                         <Routes>
-                            <Route path="/contests" element={<ContestsList />}></Route>
-                            <Route path="/contests/:id/edit" element={<EditContestForm setNotifications={setNotifications}/>}></Route>
+                            <Route path="/contests" element={<ContestsList addNotification={addNotification}/>}></Route>
+                            <Route path="/contests/:id/edit" element={<EditContestForm addNotification={addNotification}/>}></Route>
                             <Route path="/contests/:id/edit-results" element={
                                 <EditResults 
-                                    setNotifications={setNotifications}
+                                    addNotification={addNotification}
                                     isEditingMode={true}/>}
                             ></Route>
                             <Route path="/contests/:id/results" element={
                                 <EditResults 
-                                    setNotifications={setNotifications}
+                                    addNotification={addNotification}
                                     isEditingMode={false}/>}
                             ></Route>
                             <Route path="/users" element={<UserList />}></Route>
