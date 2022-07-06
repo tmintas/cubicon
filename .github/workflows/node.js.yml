@@ -42,7 +42,7 @@ jobs:
       run: ls -al
 
     - name: Deploy with rsync
-      run: rsync -avz -e ./server/dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/created
+      run: rsync -avz /server/dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/created
   
   BuildClient:
     runs-on: ubuntu-latest
