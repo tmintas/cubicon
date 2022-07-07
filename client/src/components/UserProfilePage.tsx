@@ -29,9 +29,9 @@ const UserProfilePage = () => {
         allResults: [],
     });
 
-    const baseUrl = `${process.env.REACT_APP_BACKEND_SERVER_URL}/users`;
-
     useEffect(() => {
+        const baseUrl = `${process.env.REACT_APP_BACKEND_SERVER_URL}/users`;
+
         const getUser = fetch(`${baseUrl}/${userId}/profile`).then(res => res.json());
         const getContestsCount = fetch(`${baseUrl}/${userId}/contests-count`).then(res => res.json());
         const getAllResults = fetch(`${baseUrl}/${userId}/all-results`).then(res => res.json());
