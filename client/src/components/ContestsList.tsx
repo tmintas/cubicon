@@ -14,8 +14,6 @@ type ContestsListState = {
 }
 
 const ContestList = (props: ErrorHandlerProps) => {
-    console.log(process.env.REACT_APP_BACKEND_SERVER_URL);
-    
     const monthsAbbreviations = [ 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек' ];
     
     const navigate = useNavigate();
