@@ -45,10 +45,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
     - name: Install Deps
       working-directory: ./client
       run: npm ci
+
+    - name: Create .env file
+      working-directory: ./client
+      run: |
+          touch .env
+          echo REACT_APP_BACKEND_SERVER_URL=${{ secrets.REACT_APP_BACKEND_SERVER_URL }} >> .env
+          echo ${{ secrets.REACT_APP_BACKEND_SERVER_URL }}
+          cat .env
+
     - name: Build client app
       working-directory: ./client 
       run: npm run build --if-present
-  
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }} 
+        known_hosts: 'placeholder'
+
+    - name: Adding Known Hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy with rsync
+      run: rsync -avz ./client/build/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/cubicon/client
