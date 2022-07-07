@@ -1,0 +1,73 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and deploy it to a remote server
+name:  Cubicon CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  BuildServer:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 16
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: ./server/package-lock.json
+
+    - name: Install Deps
+      working-directory: ./server
+      run: npm ci
+
+    - name: Build server app
+      working-directory: ./server 
+      run: npm run build --if-present
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }} 
+        known_hosts: 'placeholder'
+
+    - name: Adding Known Hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy with rsync
+      run: rsync -avz ./server/dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/cubicon/server/dist
+  
+  BuildClient:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Deps
+      working-directory: ./client
+      run: npm ci
+
+    - name: Create .env file
+      working-directory: ./client
+      run: |
+          touch .env
+          echo REACT_APP_BACKEND_SERVER_URL=${{ secrets.REACT_APP_BACKEND_SERVER_URL }} >> .env
+          cat .env
+
+    - name: Build client app
+      working-directory: ./client 
+      run: npm run build --if-present
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }} 
+        known_hosts: 'placeholder'
+
+    - name: Adding Known Hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy with rsync
+      run: rsync -avz ./client/build/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/cubicon/client
