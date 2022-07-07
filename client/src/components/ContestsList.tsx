@@ -225,7 +225,7 @@ const ContestList = (props: ErrorHandlerProps) => {
     return (
         <>
             <div className="tabs">
-                <h2 className={state.showUpcoming ? 'active' : ''} onClick={() => { toggleContestTab(true) } }>Предстоящие</h2>
+                <h2 className={state.showUpcoming ? 'active' : ''} onClick={() => { toggleContestTab(true) } }>предстоящие</h2>
                 <h2 className={state.showUpcoming ? '' : 'active'} onClick={() => { toggleContestTab(false) } }>Прошедшие</h2>
             </div>
 
