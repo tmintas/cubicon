@@ -12,6 +12,8 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import UserProfilePage from "./components/UserProfilePage";
 
 const App = () => {
+    console.log('app init');
+    
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const addNotification = useCallback((notification: Notification) => {
