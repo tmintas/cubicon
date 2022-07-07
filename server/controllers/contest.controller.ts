@@ -10,7 +10,7 @@ export const getAllContests = async (req: any, res: any) => {
             }
         });
 
-        res.status(200).json({});
+        res.status(200).json(contests);
     }
     catch (error: any) {
         res.status(404).json({ message: error.message });
